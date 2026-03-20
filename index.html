@@ -194,7 +194,7 @@ table.data-table tbody td{padding:12px 16px;font-size:13px;color:var(--ink-2);ve
 </head>
 <body>
 
-<!-- ═══ SCHERMATA CONFIGURAZIONE (prima volta) ═══ -->
+<!-- config screen rimossa -->
 <div id="config-screen">
   <div class="config-box">
     <h2>Configura Supabase</h2>
@@ -400,7 +400,7 @@ table.data-table tbody td{padding:12px 16px;font-size:13px;color:var(--ink-2);ve
 const CFG_KEY = 'supabase_config_padrepio';
 
 function leggiConfig() {
-  try { return JSON.parse(localStorage.getItem(CFG_KEY)) || {}; } catch(e) { return {}; }
+  return { url: 'https://hvhoxeaycrwvmrufloqy.supabase.co', key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2aG94ZWF5Y3J3dm1ydWZsb3F5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDM3MTUsImV4cCI6MjA4OTYxOTcxNX0.5ppOh7cJIB2qdft40I9uLDiP3vsUiBV7jr9klJ304M8' };
 }
 
 function salvaConfig() {
@@ -419,7 +419,7 @@ let supabase = null;
 function inizializzaSupabase() {
   const cfg = leggiConfig();
   if (!cfg.url || !cfg.key) {
-    document.getElementById('config-screen').classList.add('show');
+    /* config hardcoded */console.log("Supabase configurato");
     return false;
   }
   supabase = window.supabase.createClient(cfg.url, cfg.key);
