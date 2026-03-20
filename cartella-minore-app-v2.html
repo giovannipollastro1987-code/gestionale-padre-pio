@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartella Sociale – Consorzio Padre Pio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --blu:#1a3a5c;--blu-medio:#2563a8;--blu-chiaro:#e8f0fa;--blu-bordo:#b8d0ee;
+    --arancio:#e85d1a;--arancio-chiaro:#fef0e8;
+    --verde:#1a7a4a;--verde-chiaro:#e8f7ee;
+    --grigio-sfondo:#f4f5f7;--grigio-bordo:#d8dce3;
+    --testo:#1a1c22;--testo-muted:#5a6070;--bianco:#ffffff;
+    --rosso:#c0392b;--rosso-chiaro:#fdecea;
+    --giallo:#d4a017;--giallo-chiaro:#fdf6e3;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Georgia','Times New Roman',serif;background:var(--grigio-sfondo);color:var(--testo);min-height:100vh;}
+
+  /* Header istituzionale */
+  .header-istituzionale{background:var(--blu);color:var(--bianco);border-bottom:4px solid var(--arancio);}
+  .header-top{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;gap:16px;}
+  .header-loghi{display:flex;align-items:center;gap:20px;}
+  .logo-ue{width:44px;height:44px;background:#003399;border:2px solid #ffd700;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#ffd700;font-weight:bold;letter-spacing:.5px;}
+  .logo-consorzio{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border-left:3px solid var(--arancio);padding-left:12px;}
+  .logo-consorzio .nome-consorzio{font-size:15px;font-weight:bold;letter-spacing:1.5px;color:var(--bianco);text-transform:uppercase;font-family:Arial,sans-serif;line-height:1.1;}
+  .logo-consorzio .nome-consorzio span{color:var(--arancio);}
+  .logo-consorzio .sottotitolo-consorzio{font-size:9px;color:rgba(255,255,255,.55);letter-spacing:1.2px;text-transform:uppercase;font-family:Arial,sans-serif;}
+  .header-titolo{text-align:center;flex:1;}
+  .header-titolo .programma{font-size:11px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;font-family:Arial,sans-serif;}
+  .header-titolo h1{font-size:22px;font-weight:normal;letter-spacing:2px;text-transform:uppercase;color:var(--bianco);}
+  .header-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+  .badge-stato{font-size:11px;font-family:Arial,sans-serif;background:var(--arancio);color:white;padding:3px 10px;border-radius:3px;letter-spacing:.5px;text-transform:uppercase;}
+  .badge-fascicolo{font-size:11px;font-family:Arial,sans-serif;color:rgba(255,255,255,.6);letter-spacing:1px;}
+
+  /* Barra azioni */
+  .barra-azioni{background:#0f2a45;padding:10px 28px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.1);}
+  .barra-btn{padding:7px 14px;border-radius:4px;font-size:12px;font-family:Arial,sans-serif;font-weight:bold;cursor:pointer;letter-spacing:.5px;border:1px solid rgba(255,255,255,.2);transition:background .2s;}
+  .barra-btn.torna{background:rgba(255,255,255,.12);color:white;}
+  .barra-btn.torna:hover{background:rgba(255,255,255,.2);}
+  .barra-btn.salva{background:rgba(255,255,255,.15);color:white;}
+  .barra-btn.salva:hover{background:rgba(255,255,255,.25);}
+  .barra-btn.stampa{background:white;color:#1a3a5c;border-color:white;}
+  .barra-btn.stampa:hover{background:#e8f0fa;}
+  .barra-btn.pdf{background:var(--arancio);color:white;border-color:var(--arancio);}
+  .barra-btn.pdf:hover{background:#c94e14;}
+  .barra-titolo{flex:1;font-family:Arial,sans-serif;font-size:12px;color:rgba(255,255,255,.65);}
+
+  /* Nav sezioni */
+  .nav-principale{background:#122a45;display:flex;overflow-x:auto;padding:0 28px;border-top:1px solid rgba(255,255,255,.1);}
+  .nav-tab{display:flex;align-items:center;gap:7px;padding:11px 18px;font-size:13px;font-family:Arial,sans-serif;color:rgba(255,255,255,.6);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:color .2s,border-color .2s;letter-spacing:.3px;}
+  .nav-tab:hover{color:rgba(255,255,255,.9);}
+  .nav-tab.attivo{color:var(--bianco);border-bottom-color:var(--arancio);}
+  .nav-tab .indicatore{width:7px;height:7px;border-radius:50%;background:var(--grigio-bordo);}
+  .nav-tab.attivo .indicatore{background:var(--arancio);}
+
+  /* Layout */
+  .contenuto-principale{display:grid;grid-template-columns:240px 1fr;gap:20px;max-width:1200px;margin:0 auto;padding:24px;}
+  .sidebar{display:flex;flex-direction:column;gap:14px;}
+  .card-minore{background:var(--bianco);border:1px solid var(--grigio-bordo);border-radius:6px;overflow:hidden;}
+  .card-minore-header{background:var(--blu);color:white;padding:14px 16px;text-align:center;}
+  .avatar-minore{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-family:Arial,sans-serif;border:2px solid rgba(255,255,255,.3);}
+  .nome-minore{font-size:15px;font-weight:normal;letter-spacing:.5px;}
+  .alias-minore{font-size:11px;color:rgba(255,255,255,.6);font-family:Arial,sans-serif;margin-top:2px;}
+  .card-minore-body{padding:12px 16px;}
+  .info-riga{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--grigio-sfondo);font-family:Arial,sans-serif;font-size:12px;}
+  .info-riga:last-child{border-bottom:none;}
+  .info-label{color:var(--testo-muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+  .info-valore{font-size:12px;color:var(--testo);font-weight:bold;text-align:right;max-width:140px;}
+
+  .card-avanzamento{background:var(--bianco);border:1px solid var(--grigio-bordo);border-radius:6px;padding:14px 16px;}
+  .avanzamento-titolo{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--testo-muted);font-family:Arial,sans-serif;margin-bottom:12px;}
+  .barra-wrapper{margin-bottom:10px;}
+  .barra-label{display:flex;justify-content:space-between;font-size:11px;font-family:Arial,sans-serif;color:var(--testo-muted);margin-bottom:4px;}
+  .barra-sfondo{height:6px;background:var(--grigio-sfondo);border-radius:3px;overflow:hidden;}
+  .barra-riempimento{height:100%;border-radius:3px;transition:width .5s ease;}
+
+  .area-principale{display:flex;flex-direction:column;gap:20px;}
+  .sezione-pannello{display:none;}
+  .sezione-pannello.attiva{display:block;}
+  .sezione-card{background:var(--bianco);border:1px solid var(--grigio-bordo);border-radius:6px;overflow:hidden;}
+  .sezione-header{background:var(--blu-chiaro);border-bottom:2px solid var(--blu-bordo);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;}
+  .sezione-titolo{font-size:15px;color:var(--blu);font-weight:normal;letter-spacing:1px;text-transform:uppercase;}
+  .sezione-badge{font-size:11px;font-family:Arial,sans-serif;padding:3px 10px;border-radius:3px;letter-spacing:.5px;text-transform:uppercase;}
+  .sezione-badge.obbligatorio{background:var(--rosso-chiaro);color:var(--rosso);border:1px solid #f5c6c6;}
+  .sezione-corpo{padding:20px;}
+  .sep-sezione{height:1px;background:var(--grigio-bordo);margin:18px 0;}
+  .sottotitolo-sezione{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--testo-muted);font-family:Arial,sans-serif;margin-bottom:12px;margin-top:4px;border-left:3px solid var(--blu-medio);padding-left:8px;}
+
+  .griglia-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .griglia-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .campo{display:flex;flex-direction:column;gap:5px;}
+  .campo.piena-larghezza{grid-column:1/-1;}
+  label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--testo-muted);font-family:Arial,sans-serif;font-weight:bold;}
+  input[type="text"],input[type="date"],select,textarea{padding:8px 12px;border:1px solid var(--grigio-bordo);border-radius:4px;font-size:14px;font-family:Arial,sans-serif;color:var(--testo);background:var(--bianco);transition:border-color .2s;width:100%;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blu-medio);box-shadow:0 0 0 3px rgba(37,99,168,.1);}
+  textarea{resize:vertical;min-height:80px;line-height:1.5;}
+
+  .tabella-docs{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;}
+  .tabella-docs th{background:var(--grigio-sfondo);padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--testo-muted);font-weight:bold;border-bottom:2px solid var(--grigio-bordo);}
+  .tabella-docs td{padding:9px 12px;border-bottom:1px solid var(--grigio-sfondo);vertical-align:middle;}
+  .tabella-docs tr:hover td{background:var(--grigio-sfondo);}
+  .select-si-no{padding:4px 8px;border:1px solid var(--grigio-bordo);border-radius:3px;font-size:12px;font-family:Arial,sans-serif;background:var(--bianco);color:var(--testo);width:70px;}
+  .select-si-no.si{background:var(--verde-chiaro);color:var(--verde);border-color:#9ddcb8;}
+  .select-si-no.no{background:var(--rosso-chiaro);color:var(--rosso);border-color:#f5c6c6;}
+
+  .tabella-diario{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;}
+  .tabella-diario th{background:var(--grigio-sfondo);padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--testo-muted);font-weight:bold;border-bottom:2px solid var(--grigio-bordo);}
+  .tabella-diario td{padding:8px 12px;border-bottom:1px solid var(--grigio-sfondo);vertical-align:top;}
+  .tabella-diario td input,.tabella-diario td select{padding:5px 8px;font-size:12px;width:100%;}
+
+  .btn-aggiungi-riga{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px dashed var(--blu-medio);background:var(--blu-chiaro);color:var(--blu-medio);font-size:12px;font-family:Arial,sans-serif;border-radius:4px;cursor:pointer;margin-top:10px;transition:background .2s;letter-spacing:.3px;}
+  .btn-aggiungi-riga:hover{background:#d4e5f7;}
+  .btn-rimuovi{width:22px;height:22px;border:none;background:var(--rosso-chiaro);color:var(--rosso);border-radius:3px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;line-height:1;}
+
+  .azioni-footer{display:flex;gap:10px;padding:16px 20px;background:var(--grigio-sfondo);border-top:1px solid var(--grigio-bordo);}
+  .btn-primario{padding:9px 20px;background:var(--blu);color:white;border:none;border-radius:4px;font-size:13px;font-family:Arial,sans-serif;cursor:pointer;letter-spacing:.5px;transition:background .2s;}
+  .btn-primario:hover{background:#0f2a45;}
+  .btn-secondario{padding:9px 20px;background:white;color:var(--testo);border:1px solid var(--grigio-bordo);border-radius:4px;font-size:13px;font-family:Arial,sans-serif;cursor:pointer;letter-spacing:.5px;transition:background .2s;}
+  .btn-secondario:hover{background:var(--grigio-sfondo);}
+  .btn-stampa{margin-left:auto;padding:9px 20px;background:white;color:var(--blu-medio);border:1px solid var(--blu-bordo);border-radius:4px;font-size:13px;font-family:Arial,sans-serif;cursor:pointer;letter-spacing:.5px;transition:background .2s;}
+
+  /* PEI */
+  .pei-area-titolo{font-family:Arial,sans-serif;font-size:13px;font-weight:bold;color:var(--bianco);padding:8px 16px;border-radius:4px 4px 0 0;letter-spacing:.5px;text-transform:uppercase;}
+  .pei-area-wrap{border:1px solid var(--grigio-bordo);border-radius:4px;margin-bottom:16px;overflow:hidden;}
+  .tabella-pei{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;}
+  .tabella-pei th{background:var(--grigio-sfondo);padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--testo-muted);font-weight:bold;border-bottom:1px solid var(--grigio-bordo);}
+  .tabella-pei td{padding:8px 10px;border-bottom:1px solid var(--grigio-sfondo);vertical-align:top;}
+  .tabella-pei td input{padding:5px 8px;font-size:12px;width:100%;}
+  .pei-check-wrap{display:flex;flex-direction:column;gap:4px;}
+  .pei-trim-check{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--testo);cursor:pointer;}
+  .pei-trim-check input{width:13px;height:13px;accent-color:var(--verde);}
+  .podio-wrap{display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:20px 0 0;margin-bottom:14px;}
+  .podio-posto{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .podio-input{width:120px;text-align:center;font-size:12px;padding:6px 8px;border:1px solid var(--grigio-bordo);border-radius:4px;font-family:Arial,sans-serif;}
+  .podio-blocco{width:100px;border-radius:4px 4px 0 0;display:flex;align-items:center;justify-content:center;font-weight:bold;font-family:Arial,sans-serif;color:white;}
+  .timeline-wrap{overflow-x:auto;margin-bottom:14px;}
+  .timeline-table{border-collapse:collapse;font-size:11px;font-family:Arial,sans-serif;min-width:700px;}
+  .timeline-table th{padding:6px 8px;background:var(--grigio-sfondo);border:1px solid var(--grigio-bordo);font-size:10px;text-align:center;color:var(--testo-muted);font-weight:bold;letter-spacing:.5px;white-space:nowrap;}
+  .timeline-table td{padding:4px 6px;border:1px solid var(--grigio-bordo);text-align:center;cursor:pointer;transition:background .15s;min-width:46px;}
+  .timeline-table td.area-label{text-align:left;font-size:10px;color:var(--testo-muted);white-space:nowrap;padding:4px 8px;cursor:default;font-weight:bold;letter-spacing:.3px;}
+  .timeline-table td.attivo{background:var(--blu-medio);}
+  .firme-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:16px;}
+  .firma-box{display:flex;flex-direction:column;gap:4px;align-items:center;}
+  .firma-label-small{font-size:10px;font-family:Arial,sans-serif;color:var(--testo-muted);text-align:center;text-transform:uppercase;letter-spacing:.5px;}
+  .firma-linea{width:100%;height:1px;background:var(--testo);margin-top:24px;}
+  .alert-banner{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:4px;font-family:Arial,sans-serif;font-size:13px;margin-bottom:16px;}
+  .alert-info{background:var(--blu-chiaro);border:1px solid var(--blu-bordo);color:var(--blu);}
+  .alert-avvertimento{background:var(--giallo-chiaro);border:1px solid #e8d89a;color:#7a5400;}
+  .tabella-piano-uscita{width:100%;border-collapse:collapse;font-size:13px;font-family:Arial,sans-serif;}
+  .tabella-piano-uscita th{background:var(--grigio-sfondo);padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--testo-muted);font-weight:bold;border-bottom:2px solid var(--grigio-bordo);text-align:left;}
+  .tabella-piano-uscita td{padding:8px 12px;border-bottom:1px solid var(--grigio-sfondo);vertical-align:middle;}
+
+  /* Toast */
+  .toast-salvataggio{position:fixed;bottom:24px;right:24px;background:var(--blu);color:white;padding:12px 20px;border-radius:6px;font-family:Arial,sans-serif;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);opacity:0;transform:translateY(12px);transition:opacity .3s,transform .3s;pointer-events:none;z-index:1000;}
+  .toast-salvataggio.visibile{opacity:1;transform:translateY(0);}
+
+  /* Print */
+  .print-footer{display:none;}
+  @media print {
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+    body{background:white!important;}
+    .barra-azioni,.nav-principale,.btn-primario,.btn-secondario,.btn-stampa,.btn-aggiungi-riga,.btn-rimuovi,.azioni-footer,.toast-salvataggio,.card-avanzamento{display:none!important;}
+    .sezione-pannello{display:block!important;page-break-inside:avoid;}
+    .contenuto-principale{display:block!important;padding:0!important;max-width:100%!important;}
+    .sidebar{display:none!important;}
+    .header-istituzionale{background:var(--blu)!important;}
+    .sezione-card{border:1pt solid #c0c0c0!important;margin-bottom:14pt!important;}
+    .sezione-header{background:#e8f0fa!important;border-bottom:1pt solid #b8d0ee!important;}
+    table{page-break-inside:avoid;}
+    #pannello-anagrafica,#pannello-sanitaria,#pannello-diario,#pannello-documenti,#pannello-legale,#pannello-sociale,#pannello-pei{page-break-after:always;}
+    .griglia-2,.griglia-3{display:grid!important;}
+    input,textarea,select{border:none!important;border-bottom:1pt solid #888!important;border-radius:0!important;padding:2pt 0!important;background:transparent!important;font-size:10pt!important;}
+    .timeline-table td.attivo{background:#2563a8!important;}
+    .firma-linea{background:#000!important;}
+    .print-footer{display:block!important;text-align:center;font-size:9pt;color:#888;border-top:1pt solid #ddd;padding-top:6pt;margin-top:16pt;}
+  }
+
+  @media(max-width:900px){
+    .contenuto-principale{grid-template-columns:1fr;}
+    .griglia-2,.griglia-3{grid-template-columns:1fr;}
+    .firme-grid{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+
+<!-- BARRA AZIONI -->
+<div class="barra-azioni">
+  <button class="barra-btn torna" onclick="tornaAlGestionale()">← Gestionale</button>
+  <span class="barra-titolo" id="barra-titolo-minore">Cartella in caricamento…</span>
+  <button class="barra-btn salva" onclick="salvaCartella()">💾 Salva</button>
+  <button class="barra-btn stampa" onclick="stampaTutto()">🖨 Stampa</button>
+  <button class="barra-btn pdf" onclick="scaricaPDF()">⬇ PDF</button>
+</div>
+
+<!-- HEADER ISTITUZIONALE -->
+<div class="header-istituzionale">
+  <div class="header-top">
+    <div class="header-loghi">
+      <div class="logo-ue">EU</div>
+      <div class="logo-consorzio">
+        <span class="nome-consorzio">Consorzio <span>Padre Pio</span></span>
+        <span class="sottotitolo-consorzio">Servizi sociali e integrazione</span>
+      </div>
+    </div>
+    <div class="header-titolo">
+      <div class="programma">Linee guida Ministero del Lavoro e delle Politiche Sociali – Cartella Sociale Informatizzata</div>
+      <h1>Cartella Sociale</h1>
+    </div>
+    <div class="header-meta">
+      <span class="badge-stato" id="badge-stato">In compilazione</span>
+      <span class="badge-fascicolo" id="badge-fascicolo">Fascicolo: —</span>
+    </div>
+  </div>
+  <nav class="nav-principale">
+    <div class="nav-tab attivo" onclick="mostraSezione('anagrafica',this)"><span class="indicatore"></span> A. Anagrafica</div>
+    <div class="nav-tab" onclick="mostraSezione('sanitaria',this)"><span class="indicatore"></span> B. Sanitaria</div>
+    <div class="nav-tab" onclick="mostraSezione('diario',this)"><span class="indicatore"></span> C. Diario</div>
+    <div class="nav-tab" onclick="mostraSezione('documenti',this)"><span class="indicatore"></span> D. Documenti</div>
+    <div class="nav-tab" onclick="mostraSezione('legale',this)"><span class="indicatore"></span> E. Legale</div>
+    <div class="nav-tab" onclick="mostraSezione('sociale',this)"><span class="indicatore"></span> F. Sociale</div>
+    <div class="nav-tab" onclick="mostraSezione('pei',this)"><span class="indicatore"></span> PEI</div>
+    <div class="nav-tab" onclick="mostraSezione('uscita',this)"><span class="indicatore"></span> G. Trasferimento</div>
+  </nav>
+</div>
+
+<div class="contenuto-principale">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="card-minore">
+      <div class="card-minore-header">
+        <div class="avatar-minore" id="avatar-iniziali">–</div>
+        <div class="nome-minore" id="sidebar-nome">Caricamento…</div>
+        <div class="alias-minore" id="sidebar-alias">Alias: —</div>
+      </div>
+      <div class="card-minore-body">
+        <div class="info-riga"><span class="info-label">Nazionalità</span><span class="info-valore" id="sb-naz">—</span></div>
+        <div class="info-riga"><span class="info-label">Data nasc.</span><span class="info-valore" id="sb-dob">—</span></div>
+        <div class="info-riga"><span class="info-label">Sbarco/Rintr.</span><span class="info-valore" id="sb-sbarco">—</span></div>
+        <div class="info-riga"><span class="info-label">Case Manager</span><span class="info-valore" id="sb-cm">—</span></div>
+        <div class="info-riga"><span class="info-label">N. Fascicolo</span><span class="info-valore" id="sb-fasn">—</span></div>
+        <div class="info-riga"><span class="info-label">Struttura</span><span class="info-valore" id="sb-strutt">—</span></div>
+      </div>
+    </div>
+    <div class="card-avanzamento">
+      <div class="avanzamento-titolo">Completamento</div>
+      <div class="barra-wrapper"><div class="barra-label"><span>Anagrafica</span><span id="perc-anag">0%</span></div><div class="barra-sfondo"><div class="barra-riempimento" id="bar-anag" style="width:0%;background:#2563a8;"></div></div></div>
+      <div class="barra-wrapper"><div class="barra-label"><span>Sanitaria</span><span id="perc-san">0%</span></div><div class="barra-sfondo"><div class="barra-riempimento" id="bar-san" style="width:0%;background:#1a7a4a;"></div></div></div>
+      <div class="barra-wrapper"><div class="barra-label"><span>PEI</span><span id="perc-pei">0%</span></div><div class="barra-sfondo"><div class="barra-riempimento" id="bar-pei" style="width:0%;background:#7c3aed;"></div></div></div>
+    </div>
+  </aside>
+
+  <!-- AREA PRINCIPALE -->
+  <main class="area-principale">
+
+    <!-- A. ANAGRAFICA -->
+    <div id="pannello-anagrafica" class="sezione-pannello attiva">
+      <div class="sezione-card">
+        <div class="sezione-header"><span class="sezione-titolo">A. Scheda Informativa-Anagrafica Minore</span><span class="sezione-badge obbligatorio">Da compilare all'ingresso</span></div>
+        <div class="sezione-corpo">
+          <div class="sottotitolo-sezione">Dati identificativi del minore</div>
+          <div class="griglia-2">
+            <div class="campo"><label>Cognome</label><input type="text" id="cognome" oninput="aggiornaSidebar()"></div>
+            <div class="campo"><label>Nome</label><input type="text" id="nome" oninput="aggiornaSidebar()"></div>
+            <div class="campo"><label>Alias eventuali</label><input type="text" id="alias" oninput="aggiornaSidebar()"></div>
+            <div class="campo"><label>Data di nascita dichiarata in struttura</label><input type="date" id="data-nascita" oninput="aggiornaSidebar()"></div>
+            <div class="campo"><label>Paese e luogo di nascita</label><input type="text" id="paese-nascita"></div>
+            <div class="campo"><label>Cittadinanza / Nazionalità</label><input type="text" id="nazionalita" oninput="aggiornaSidebar()"></div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Ingresso e collocamento</div>
+          <div class="griglia-2">
+            <div class="campo"><label>Luogo e data sbarco / rintraccio</label><input type="text" id="luogo-sbarco" oninput="aggiornaSidebar()"></div>
+            <div class="campo"><label>Autorità affidamento (art. 403 c.c.)</label><input type="text" id="autorita-affidamento"></div>
+            <div class="campo"><label>Ente locale collocamento</label><input type="text" id="ente-collocamento"></div>
+            <div class="campo"><label>Struttura di accoglienza</label><input type="text" id="struttura" oninput="aggiornaSidebar()"></div>
+            <div class="campo"><label>N. Fascicolo</label><input type="text" id="fascicolo-n" oninput="aggiornaSidebar()"></div>
+            <div class="campo"><label>Data ingresso struttura</label><input type="date" id="data-ingresso"></div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Caratteristiche culturali</div>
+          <div class="griglia-2">
+            <div class="campo"><label>Lingua madre / dialetto</label><input type="text" id="lingua-madre"></div>
+            <div class="campo"><label>Altre lingue parlate</label><input type="text" id="altre-lingue"></div>
+            <div class="campo"><label>Eventuale credo religioso</label><input type="text" id="credo-religioso"></div>
+            <div class="campo"><label>Gruppo etnico</label><input type="text" id="gruppo-etnico"></div>
+            <div class="campo"><label>Alfabetizzazione</label>
+              <select id="alfabetizzazione">
+                <option value="">— Selezionare —</option>
+                <option>Alfabetizzato in lingua madre</option>
+                <option>Alfabetizzato in francese/inglese/arabo</option>
+                <option>Parzialmente alfabetizzato</option>
+                <option>Non alfabetizzato</option>
+              </select>
+            </div>
+            <div class="campo"><label>Accertamento età (data, autorità, esito)</label><input type="text" id="accertamento-eta"></div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Responsabile fascicolo e Case Manager</div>
+          <div class="griglia-3">
+            <div class="campo"><label>Case Manager</label><input type="text" id="cm-nome" oninput="aggiornaSidebar()"></div>
+            <div class="campo"><label>Responsabile fascicolo</label><input type="text" id="resp-nome"></div>
+            <div class="campo"><label>Data apertura fascicolo</label><input type="date" id="data-apertura"></div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="griglia-2">
+            <div class="campo"><label>Documenti in possesso all'ingresso</label><textarea id="doc-ingresso"></textarea></div>
+            <div class="campo"><label>Effetti personali al seguito</label><textarea id="effetti-personali"></textarea></div>
+            <div class="campo piena-larghezza"><label>Informazioni dai luoghi di sbarco / rintraccio / altra struttura</label><textarea id="info-prev"></textarea></div>
+          </div>
+        </div>
+        <div class="azioni-footer">
+          <button class="btn-primario" onclick="salvaEVai('sanitaria')">Salva e continua →</button>
+          <button class="btn-secondario" onclick="salvaCartella()">Salva bozza</button>
+          <button class="btn-stampa" onclick="stampaTutto()">Stampa</button>
+        </div>
+      </div>
+      <div class="sezione-card" style="margin-top:16px;">
+        <div class="sezione-header"><span class="sezione-titolo">Informazioni sul percorso migratorio</span></div>
+        <div class="sezione-corpo">
+          <div class="griglia-2">
+            <div class="campo"><label>Quando ha lasciato il paese di origine</label><input type="text" id="partenza-data"></div>
+            <div class="campo"><label>Ragioni e motivi dell'espatrio</label><textarea id="ragioni-espatrio"></textarea></div>
+            <div class="campo"><label>Paesi attraversati con indicazioni di tempistica</label><textarea id="paesi-attraversati"></textarea></div>
+            <div class="campo"><label>Eventuali timori in caso di rimpatrio</label><textarea id="timori-rimpatrio"></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B. SANITARIA -->
+    <div id="pannello-sanitaria" class="sezione-pannello">
+      <div class="sezione-card">
+        <div class="sezione-header"><span class="sezione-titolo">B. Scheda Sanitaria</span><span class="sezione-badge obbligatorio">Prima visita obbligatoria</span></div>
+        <div class="sezione-corpo">
+          <div class="sottotitolo-sezione">Prima visita medica</div>
+          <div class="griglia-3">
+            <div class="campo"><label>Data prima visita</label><input type="date" id="prima-visita-data"></div>
+            <div class="campo"><label>Luogo della visita</label><input type="text" id="prima-visita-luogo"></div>
+            <div class="campo"><label>Nome medico</label><input type="text" id="prima-visita-medico"></div>
+            <div class="campo piena-larghezza"><label>Breve annotazione</label><textarea id="prima-visita-note" style="min-height:60px;"></textarea></div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Documenti sanitari</div>
+          <div class="griglia-3">
+            <div class="campo"><label>STP – Data rilascio</label><input type="date" id="stp-data"></div>
+            <div class="campo"><label>STP – Data scadenza</label><input type="date" id="stp-scadenza"></div>
+            <div class="campo"><label>Tessera sanitaria / SSN</label><input type="text" id="tessera-san"></div>
+            <div class="campo"><label>Codice fiscale</label><input type="text" id="cf-san"></div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Screening sanitario</div>
+          <table class="tabella-docs">
+            <thead><tr><th>Esame</th><th>Svolto</th><th>Data</th><th>Presidio sanitario</th><th>Esito</th></tr></thead>
+            <tbody>
+              <tr><td>Test Mantoux (TBC)</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option value="SI">SÌ</option><option value="NO">NO</option></select></td><td><input type="date" style="width:130px;padding:4px 6px;font-size:12px;"></td><td><input type="text" placeholder="Presidio" style="font-size:12px;padding:4px 8px;"></td><td><input type="text" placeholder="Esito" style="font-size:12px;padding:4px 8px;"></td></tr>
+              <tr><td>Test Quantiferon</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option value="SI">SÌ</option><option value="NO">NO</option></select></td><td><input type="date" style="width:130px;padding:4px 6px;font-size:12px;"></td><td><input type="text" placeholder="Presidio" style="font-size:12px;padding:4px 8px;"></td><td><input type="text" placeholder="Esito" style="font-size:12px;padding:4px 8px;"></td></tr>
+              <tr><td>Analisi ematologiche</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option value="SI">SÌ</option><option value="NO">NO</option></select></td><td><input type="date" style="width:130px;padding:4px 6px;font-size:12px;"></td><td><input type="text" placeholder="Presidio" style="font-size:12px;padding:4px 8px;"></td><td><input type="text" placeholder="Esito" style="font-size:12px;padding:4px 8px;"></td></tr>
+              <tr><td>Visite mediche generali</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option value="SI">SÌ</option><option value="NO">NO</option></select></td><td><input type="date" style="width:130px;padding:4px 6px;font-size:12px;"></td><td><input type="text" placeholder="Presidio" style="font-size:12px;padding:4px 8px;"></td><td><input type="text" placeholder="Esito" style="font-size:12px;padding:4px 8px;"></td></tr>
+            </tbody>
+          </table>
+          <div class="sep-sezione"></div>
+          <div class="griglia-2">
+            <div class="campo"><label>Allergie e/o patologie particolari</label><textarea id="allergie" style="min-height:60px;"></textarea></div>
+            <div class="campo"><label>Terapie farmacologiche in corso</label><textarea id="terapie" style="min-height:60px;"></textarea></div>
+            <div class="campo piena-larghezza"><label>Esigenze specifiche / altri approfondimenti</label><textarea id="esigenze-spec"></textarea></div>
+          </div>
+        </div>
+        <div class="azioni-footer">
+          <button class="btn-primario" onclick="salvaEVai('diario')">Salva e continua →</button>
+          <button class="btn-secondario" onclick="salvaCartella()">Salva bozza</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- C. DIARIO -->
+    <div id="pannello-diario" class="sezione-pannello">
+      <div class="sezione-card">
+        <div class="sezione-header"><span class="sezione-titolo">C. Diario degli Interventi</span><span class="sezione-badge obbligatorio">Aggiornamento in tempo reale</span></div>
+        <div class="sezione-corpo">
+          <div class="alert-info alert-banner"><span>ℹ</span> Il diario riporta la sintetica annotazione di ogni prestazione erogata a favore del minore.</div>
+          <table class="tabella-diario" id="tabella-diario">
+            <thead><tr><th style="width:120px;">Data</th><th>Tipo intervento</th><th>Operatore</th><th>Aggiornamento / note</th><th style="width:40px;"></th></tr></thead>
+            <tbody id="corpo-diario"><tr><td><input type="date" style="font-size:12px;padding:4px;width:100%;"></td><td><select style="font-size:12px;padding:4px;width:100%;"><option value="">— Tipo —</option><option>Colloquio accoglienza</option><option>Visita medica</option><option>Accompagnamento questura</option><option>Colloquio legale</option><option>Colloquio psicologico</option><option>Attività scolastica</option><option>Attività ludico-ricreativa</option><option>Incontro équipe</option><option>Altro</option></select></td><td><input type="text" placeholder="Operatore" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px;width:100%;"></td><td><button class="btn-rimuovi" onclick="rimuoviRiga(this)">×</button></td></tr></tbody>
+          </table>
+          <button class="btn-aggiungi-riga" onclick="aggiungiRigaDiario()">+ Aggiungi intervento</button>
+        </div>
+        <div class="azioni-footer">
+          <button class="btn-primario" onclick="salvaEVai('documenti')">Salva e continua →</button>
+          <button class="btn-secondario" onclick="salvaCartella()">Salva bozza</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- D. DOCUMENTI -->
+    <div id="pannello-documenti" class="sezione-pannello">
+      <div class="sezione-card">
+        <div class="sezione-header"><span class="sezione-titolo">D. Lista Documenti</span></div>
+        <div class="sezione-corpo">
+          <table class="tabella-docs">
+            <thead><tr><th>Documento</th><th>Sì</th><th>No</th><th>Data rilascio</th><th>Data scadenza</th><th>Note</th></tr></thead>
+            <tbody id="corpo-documenti"></tbody>
+          </table>
+        </div>
+        <div class="azioni-footer">
+          <button class="btn-primario" onclick="salvaEVai('legale')">Salva e continua →</button>
+          <button class="btn-secondario" onclick="salvaCartella()">Salva bozza</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- E. LEGALE -->
+    <div id="pannello-legale" class="sezione-pannello">
+      <div class="sezione-card">
+        <div class="sezione-header"><span class="sezione-titolo">E. Scheda Legale</span></div>
+        <div class="sezione-corpo">
+          <div class="sottotitolo-sezione">Colloqui legali</div>
+          <table class="tabella-diario">
+            <thead><tr><th>Data colloquio</th><th>Principali evidenze</th><th>Eventuali commenti</th><th>Operatore legale</th><th style="width:40px;"></th></tr></thead>
+            <tbody id="corpo-legale"><tr><td><input type="date" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Evidenze…" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Commenti…" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Operatore" style="font-size:12px;padding:4px;width:100%;"></td><td><button class="btn-rimuovi" onclick="rimuoviRiga(this)">×</button></td></tr></tbody>
+          </table>
+          <button class="btn-aggiungi-riga" onclick="aggiungiRigaGenerica('corpo-legale')">+ Aggiungi colloquio</button>
+          <div class="sep-sezione"></div>
+          <div class="griglia-2">
+            <div>
+              <div class="sottotitolo-sezione">Tutela</div>
+              <div style="background:#f7f4fd;border:1px solid #d8cff0;border-radius:4px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+                <div class="campo"><label>Tribunale competente</label><input type="text" id="l-tribunale"></div>
+                <div class="campo"><label>Tutore provvisorio</label><input type="text" id="l-tutore-prov"></div>
+                <div class="campo"><label>Data richiesta tutela</label><input type="date" id="l-data-tutela"></div>
+                <div class="campo"><label>Data nomina tutore</label><input type="date" id="l-data-nomina"></div>
+                <div class="campo"><label>Tutore nominato</label><input type="text" id="l-tutore-nom"></div>
+              </div>
+            </div>
+            <div>
+              <div class="sottotitolo-sezione">Permesso di soggiorno per minore età</div>
+              <div style="background:#f7fdf9;border:1px solid #c8e8d8;border-radius:4px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+                <div class="campo"><label>Data richiesta PdS</label><input type="date" id="l-pds-richiesta"></div>
+                <div class="campo"><label>Data rilascio PdS</label><input type="date" id="l-pds-rilascio"></div>
+                <div class="campo"><label>Scadenza PdS</label><input type="date" id="l-pds-scad"></div>
+                <div class="campo"><label>Data eventuale rigetto</label><input type="date" id="l-rigetto"></div>
+                <div class="campo"><label>Data eventuale ricorso</label><input type="date" id="l-ricorso"></div>
+              </div>
+            </div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Percorso amministrativo individuato</div>
+          <div class="griglia-2">
+            <div style="background:#fef8f0;border:1px solid #f0dcc0;border-radius:4px;padding:14px;">
+              <div style="font-size:13px;font-weight:bold;font-family:Arial,sans-serif;color:#a05000;margin-bottom:10px;">1. Protezione internazionale</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div class="campo"><label>Data richiesta C3</label><input type="date" id="l-c3-data"></div>
+                <div class="campo"><label>Commissione competente</label><input type="text" id="l-commissione"></div>
+                <div class="campo"><label>Data intervista commissione</label><input type="date" id="l-intervista"></div>
+                <div class="campo"><label>Esito commissione</label><select id="l-esito"><option value="">— In attesa —</option><option>Rifugiato</option><option>Protezione sussidiaria</option><option>Protezione speciale</option><option>Rigetto</option></select></div>
+              </div>
+            </div>
+            <div style="background:#f8f0fe;border:1px solid #ddc0f0;border-radius:4px;padding:14px;">
+              <div style="font-size:13px;font-weight:bold;font-family:Arial,sans-serif;color:#6000a0;margin-bottom:10px;">2. Protezione sociale (tratta)</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div class="campo"><label>Segnalazione questura</label><input type="text" id="l-segn-questura"></div>
+                <div class="campo"><label>Segnalazione ente anti tratta</label><input type="text" id="l-segn-tratta"></div>
+                <div class="campo"><label>Segnalazione servizi sociali</label><input type="text" id="l-segn-ss"></div>
+                <div class="campo"><label>Struttura individuata</label><input type="text" id="l-struttura-ind"></div>
+              </div>
+            </div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="campo"><label>Relazione legale</label><textarea id="l-relazione" style="min-height:120px;" placeholder="Storia personale, ragioni espatrio, valutazioni percorso amministrativo…"></textarea></div>
+        </div>
+        <div class="azioni-footer">
+          <button class="btn-primario" onclick="salvaEVai('sociale')">Salva e continua →</button>
+          <button class="btn-secondario" onclick="salvaCartella()">Salva bozza</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- F. SOCIALE -->
+    <div id="pannello-sociale" class="sezione-pannello">
+      <div class="sezione-card">
+        <div class="sezione-header"><span class="sezione-titolo">F. Scheda Sociale</span></div>
+        <div class="sezione-corpo">
+          <div class="sottotitolo-sezione">Colloqui con il/la minore</div>
+          <table class="tabella-diario">
+            <thead><tr><th>Data</th><th>Principali evidenze</th><th>Commenti</th><th>Assistente sociale</th><th style="width:40px;"></th></tr></thead>
+            <tbody id="corpo-sociale"><tr><td><input type="date" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Evidenze…" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Commenti…" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Nome A.S." style="font-size:12px;padding:4px;width:100%;"></td><td><button class="btn-rimuovi" onclick="rimuoviRiga(this)">×</button></td></tr></tbody>
+          </table>
+          <button class="btn-aggiungi-riga" onclick="aggiungiRigaGenerica('corpo-sociale')">+ Aggiungi colloquio</button>
+          <div class="sep-sezione"></div>
+          <div class="campo"><label>Relazione sociale</label><textarea id="rel-sociale" style="min-height:140px;" placeholder="Elementi significativi, bisogni, risorse, reti di sostegno…"></textarea></div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Informazioni sulla famiglia</div>
+          <div class="griglia-2">
+            <div style="border:1px solid var(--grigio-bordo);border-radius:4px;padding:14px;">
+              <div style="font-size:12px;font-weight:bold;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:.5px;color:var(--testo-muted);margin-bottom:10px;">Padre</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div class="campo"><label>Cognome e nome</label><input type="text" id="fam-padre-nome"></div>
+                <div class="campo"><label>Data di nascita</label><input type="text" id="fam-padre-dob"></div>
+                <div class="campo"><label>Luogo residenza</label><input type="text" id="fam-padre-res"></div>
+                <div class="campo"><label>Contatti</label><input type="text" id="fam-padre-cont"></div>
+              </div>
+            </div>
+            <div style="border:1px solid var(--grigio-bordo);border-radius:4px;padding:14px;">
+              <div style="font-size:12px;font-weight:bold;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:.5px;color:var(--testo-muted);margin-bottom:10px;">Madre</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div class="campo"><label>Cognome e nome</label><input type="text" id="fam-madre-nome"></div>
+                <div class="campo"><label>Data di nascita</label><input type="text" id="fam-madre-dob"></div>
+                <div class="campo"><label>Luogo residenza</label><input type="text" id="fam-madre-res"></div>
+                <div class="campo"><label>Contatti</label><input type="text" id="fam-madre-cont"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="azioni-footer">
+          <button class="btn-primario" onclick="salvaEVai('pei')">Salva e vai al PEI →</button>
+          <button class="btn-secondario" onclick="salvaCartella()">Salva bozza</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PEI -->
+    <div id="pannello-pei" class="sezione-pannello">
+      <div class="sezione-card">
+        <div class="sezione-header"><span class="sezione-titolo">PEI – Progetto Educativo Individualizzato</span><span class="sezione-badge obbligatorio">Milano SAI</span></div>
+        <div class="sezione-corpo">
+          <div class="alert-banner alert-avvertimento"><span>⚑</span> Entro 2ª settimana dall'ingresso. Verifiche trimestrali obbligatorie.</div>
+          <div class="sottotitolo-sezione">Sezione 1 – Obiettivi per area</div>
+          <div id="contenitore-aree-pei"></div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Sezione 2 – Podio (priorità del beneficiario)</div>
+          <div class="podio-wrap">
+            <div class="podio-posto"><input type="text" class="podio-input" id="podio-2" placeholder="2° priorità" style="border-color:#c0c0c0;"><div class="podio-blocco" style="height:70px;background:#9c9c9c;">2°</div></div>
+            <div class="podio-posto"><input type="text" class="podio-input" id="podio-1" placeholder="1ª priorità" style="border-color:#d4a017;"><div class="podio-blocco" style="height:100px;background:#d4a017;">1°</div></div>
+            <div class="podio-posto"><input type="text" class="podio-input" id="podio-3" placeholder="3ª priorità" style="border-color:#cd7f32;"><div class="podio-blocco" style="height:50px;background:#cd7f32;">3°</div></div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Sezione 3 – Linea del tempo</div>
+          <div class="griglia-2" style="margin-bottom:12px;">
+            <div class="campo"><label>Data di ingresso nel progetto</label><input type="date" id="pei-data-ingresso"></div>
+            <div class="campo"><label>Data di uscita prevista</label><input type="date" id="pei-data-uscita"></div>
+          </div>
+          <div class="timeline-wrap"><table class="timeline-table" id="timeline-pei"></table></div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Sezione 4 – Piano di uscita</div>
+          <table class="tabella-piano-uscita">
+            <thead><tr><th>N.</th><th>Obiettivo</th><th>SI / NO</th><th>Azioni</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--testo-muted);font-size:12px;">X</td><td>Inserimento in altro servizio</td><td><div style="display:flex;gap:10px;font-size:12px;font-family:Arial,sans-serif;"><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-x" value="si"> SI</label><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-x" value="no"> NO</label></div></td><td><input type="text" style="font-size:12px;padding:5px 8px;width:100%;"></td></tr>
+              <tr><td style="color:var(--testo-muted);font-size:12px;">1</td><td>Gestione autonoma della quotidianità</td><td><div style="display:flex;gap:10px;font-size:12px;font-family:Arial,sans-serif;"><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-1" value="si"> SI</label><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-1" value="no"> NO</label></div></td><td><input type="text" style="font-size:12px;padding:5px 8px;width:100%;"></td></tr>
+              <tr><td style="color:var(--testo-muted);font-size:12px;">2</td><td>Raggiungimento stabilità lavorativa</td><td><div style="display:flex;gap:10px;font-size:12px;font-family:Arial,sans-serif;"><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-2" value="si"> SI</label><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-2" value="no"> NO</label></div></td><td><input type="text" style="font-size:12px;padding:5px 8px;width:100%;"></td></tr>
+              <tr><td style="color:var(--testo-muted);font-size:12px;">3</td><td>Raggiungimento autonomia economica</td><td><div style="display:flex;gap:10px;font-size:12px;font-family:Arial,sans-serif;"><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-3" value="si"> SI</label><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-3" value="no"> NO</label></div></td><td><input type="text" style="font-size:12px;padding:5px 8px;width:100%;"></td></tr>
+              <tr><td style="color:var(--testo-muted);font-size:12px;">4</td><td>Autonomia abitativa</td><td><div style="display:flex;gap:10px;font-size:12px;font-family:Arial,sans-serif;"><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-4" value="si"> SI</label><label style="display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-size:12px;"><input type="radio" name="uscita-4" value="no"> NO</label></div></td><td><input type="text" style="font-size:12px;padding:5px 8px;width:100%;"></td></tr>
+            </tbody>
+          </table>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Firme</div>
+          <div class="griglia-2" style="margin-bottom:12px;">
+            <div class="campo"><label>Data compilazione</label><input type="date" id="pei-data-comp"></div>
+            <div class="campo"><label>Data revisione futura</label><input type="date" id="pei-data-rev"></div>
+          </div>
+          <div class="firme-grid">
+            <div class="firma-box"><div class="firma-linea"></div><div class="firma-label-small">Beneficiario</div></div>
+            <div class="firma-box"><div class="firma-linea"></div><div class="firma-label-small">Assistente Sociale</div></div>
+            <div class="firma-box"><div class="firma-linea"></div><div class="firma-label-small">Tutore/a</div></div>
+            <div class="firma-box"><div class="firma-linea"></div><div class="firma-label-small">Coordinatore/a</div></div>
+            <div class="firma-box"><div class="firma-linea"></div><div class="firma-label-small">Ref. Educativo</div></div>
+          </div>
+        </div>
+        <div class="azioni-footer">
+          <button class="btn-primario" onclick="salvaEVai('uscita')">Salva e continua →</button>
+          <button class="btn-secondario" onclick="salvaCartella()">Salva bozza</button>
+          <button class="btn-stampa" onclick="stampaTutto()">Stampa PEI</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- G. TRASFERIMENTO -->
+    <div id="pannello-uscita" class="sezione-pannello">
+      <div class="sezione-card">
+        <div class="sezione-header"><span class="sezione-titolo">G. Trasferimento in struttura di seconda accoglienza</span></div>
+        <div class="sezione-corpo">
+          <div class="griglia-3">
+            <div class="campo"><label>Data segnalazione SPRAR / ANCI</label><input type="date" id="tr-sprar"></div>
+            <div class="campo"><label>Data trasferimento</label><input type="date" id="tr-data"></div>
+            <div class="campo"><label>Data invio scheda H</label><input type="date" id="tr-scheda-h"></div>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Classe d'età (per corretto trasferimento SPRAR)</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-family:Arial,sans-serif;font-size:13px;">
+            <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;cursor:pointer;"><input type="radio" name="eta-class" value="lt16"> Inferiore a 16 anni</label>
+            <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;cursor:pointer;"><input type="radio" name="eta-class" value="16-17.5"> Compresa tra 16 e 17 anni e 6 mesi</label>
+            <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;cursor:pointer;"><input type="radio" name="eta-class" value="17.5-18"> Compresa tra 17 anni e 6 mesi e 18 anni (non compiuti)</label>
+            <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;cursor:pointer;"><input type="radio" name="eta-class" value="gt18"> Maggiorenne</label>
+          </div>
+          <div class="sep-sezione"></div>
+          <div class="sottotitolo-sezione">Eventuali fragilità</div>
+          <table class="tabella-docs">
+            <thead><tr><th>Fragilità</th><th>Presente</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr><td>Minore vittima di tratta</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option>SÌ</option><option>NO</option></select></td><td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px 8px;width:100%;"></td></tr>
+              <tr><td>Necessità assistenza sanitaria specialistica (DS)</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option>SÌ</option><option>NO</option></select></td><td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px 8px;width:100%;"></td></tr>
+              <tr><td>Minore con disagio mentale (DM)</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option>SÌ</option><option>NO</option></select></td><td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px 8px;width:100%;"></td></tr>
+              <tr><td>Minore in stato di gravidanza</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option>SÌ</option><option>NO</option></select></td><td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px 8px;width:100%;"></td></tr>
+              <tr><td>Minore che ha subito torture o stupri</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option>SÌ</option><option>NO</option></select></td><td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px 8px;width:100%;"></td></tr>
+              <tr><td>Altre forme gravi di violenza psicologica/fisica/sessuale</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option>SÌ</option><option>NO</option></select></td><td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px 8px;width:100%;"></td></tr>
+              <tr><td>Minore vittima di mutilazioni genitali</td><td><select class="select-si-no" onchange="coloraSelect(this)"><option value="">—</option><option>SÌ</option><option>NO</option></select></td><td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px 8px;width:100%;"></td></tr>
+            </tbody>
+          </table>
+          <div class="sep-sezione"></div>
+          <div class="campo"><label>Relazione finale multidisciplinare</label><textarea id="rel-finale" style="min-height:140px;" placeholder="1. Valutazione complessiva sul minore e sulle attività effettuate…&#10;2. Proposte motivate sul proseguimento del percorso…"></textarea></div>
+        </div>
+        <div class="azioni-footer">
+          <button class="btn-primario" onclick="salvaCartella()">Salva fascicolo completo</button>
+          <button class="btn-stampa" onclick="stampaTutto()">Stampa intero fascicolo</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Footer stampa -->
+<div class="print-footer">
+  Cartella Sociale – Consorzio Padre Pio | Linee guida Ministero del Lavoro e delle Politiche Sociali |
+  Documento riservato – trattamento dati ai sensi del D.Lgs. 196/2003 e Reg. UE 679/2016
+</div>
+
+<!-- Toast -->
+<div class="toast-salvataggio" id="toast-cart">Salvato</div>
+
+<script>
+/* ════════════════════════════════════════════
+   INIT SUPABASE
+════════════════════════════════════════════ */
+const CFG_KEY = 'supabase_config_padrepio';
+const MINORE_KEY = 'cartella_minore_attivo';
+const GEST_URL_KEY = 'gestionale_url';
+
+let supabase = null;
+let minoreId = null;
+let utenteId = null;
+
+function leggiConfig() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY)) || {}; } catch(e) { return {}; }
+}
+
+async function boot() {
+  const cfg = leggiConfig();
+  if (!cfg.url || !cfg.key) { alert('Configurazione Supabase mancante. Torna al gestionale.'); return; }
+  supabase = window.supabase.createClient(cfg.url, cfg.key);
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+  utenteId = session.user.id;
+
+  minoreId = localStorage.getItem(MINORE_KEY);
+  if (!minoreId) { alert('Nessun minore selezionato. Torna al gestionale.'); return; }
+
+  await caricaMinore();
+  inizializzaUI();
+}
+
+/* ════════════════════════════════════════════
+   CARICA / SALVA MINORE
+════════════════════════════════════════════ */
+async function caricaMinore() {
+  const { data, error } = await supabase.from('minori').select('*').eq('id', minoreId).single();
+  if (error || !data) { alert('Errore caricamento minore: ' + (error?.message || 'non trovato')); return; }
+
+  const m = data;
+  // Aggiorna barra titolo
+  const nome = [m.cognome, m.nome].filter(Boolean).join(' ') || 'Minore';
+  document.getElementById('barra-titolo-minore').textContent = nome + ' — Cartella Sociale';
+
+  // Popola campi anagrafica
+  const mapAnag = {
+    'cognome': m.cognome, 'nome': m.nome, 'alias': m.alias,
+    'data-nascita': m.dob, 'paese-nascita': m.luogo_nascita,
+    'nazionalita': m.nazionalita, 'luogo-sbarco': m.sbarco,
+    'autorita-affidamento': m.autorita, 'ente-collocamento': m.ente,
+    'struttura': m.struttura, 'fascicolo-n': m.fascicolo,
+    'data-ingresso': m.ingresso, 'lingua-madre': m.lingua,
+    'altre-lingue': m.altre_lingue, 'credo-religioso': m.religione,
+    'gruppo-etnico': m.gruppo_etnico, 'alfabetizzazione': m.alfa,
+    'accertamento-eta': m.accertamento_eta,
+    'cm-nome': m.cm, 'resp-nome': m.resp_nome,
+    'data-apertura': m.data_apertura,
+    'doc-ingresso': m.doc_ingresso, 'effetti-personali': m.effetti,
+    'info-prev': m.info_prev,
+    'partenza-data': m.partenza_data, 'ragioni-espatrio': m.ragioni_espatrio,
+    'paesi-attraversati': m.paesi_attraversati, 'timori-rimpatrio': m.timori_rimpatrio
+  };
+  Object.entries(mapAnag).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && val != null) el.value = val;
+  });
+
+  // Sanitaria
+  const mapSan = {
+    'prima-visita-data': m.prima_visita_data, 'prima-visita-luogo': m.prima_visita_luogo,
+    'prima-visita-medico': m.prima_visita_medico, 'prima-visita-note': m.prima_visita_note,
+    'stp-data': m.stp_data, 'stp-scadenza': m.stp_scad,
+    'tessera-san': m.tessera, 'cf-san': m.cf,
+    'allergie': m.allergie, 'terapie': m.terapie, 'esigenze-spec': m.esigenze
+  };
+  Object.entries(mapSan).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && val != null) el.value = val;
+  });
+
+  // PEI
+  if (m.pei_aree && Array.isArray(m.pei_aree)) {
+    caricaAreePEI(m.pei_aree);
+  } else {
+    costruisciAreePEI();
+  }
+
+  aggiornaSidebar();
+  aggiornaBarre();
+}
+
+async function salvaCartella() {
+  const payload = {
+    cognome: gv('cognome'), nome: gv('nome'), alias: gv('alias'),
+    dob: gv('data-nascita') || null, luogo_nascita: gv('paese-nascita'),
+    nazionalita: gv('nazionalita'), sbarco: gv('luogo-sbarco'),
+    autorita: gv('autorita-affidamento'), ente: gv('ente-collocamento'),
+    struttura: gv('struttura'), fascicolo: gv('fascicolo-n'),
+    ingresso: gv('data-ingresso') || null, lingua: gv('lingua-madre'),
+    altre_lingue: gv('altre-lingue'), religione: gv('credo-religioso'),
+    gruppo_etnico: gv('gruppo-etnico'), alfa: gv('alfabetizzazione'),
+    accertamento_eta: gv('accertamento-eta'),
+    cm: gv('cm-nome'), resp_nome: gv('resp-nome'),
+    data_apertura: gv('data-apertura') || null,
+    doc_ingresso: gv('doc-ingresso'), effetti: gv('effetti-personali'),
+    info_prev: gv('info-prev'),
+    partenza_data: gv('partenza-data'), ragioni_espatrio: gv('ragioni-espatrio'),
+    paesi_attraversati: gv('paesi-attraversati'), timori_rimpatrio: gv('timori-rimpatrio'),
+    // Sanitaria
+    prima_visita_data: gv('prima-visita-data') || null,
+    prima_visita_luogo: gv('prima-visita-luogo'),
+    prima_visita_medico: gv('prima-visita-medico'),
+    prima_visita_note: gv('prima-visita-note'),
+    stp_data: gv('stp-data') || null, stp_scad: gv('stp-scadenza') || null,
+    tessera: gv('tessera-san'), cf: gv('cf-san'),
+    allergie: gv('allergie'), terapie: gv('terapie'), esigenze: gv('esigenze-spec'),
+    // PEI aree (raccolta dal DOM)
+    pei_aree: raccogliAreePEI()
+  };
+
+  const { error } = await supabase.from('minori').update(payload).eq('id', minoreId);
+  if (error) { mostraToast('Errore: ' + error.message); return; }
+  mostraToast('Salvato ✓');
+  aggiornaSidebar();
+  aggiornaBarre();
+}
+
+function gv(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+/* ════════════════════════════════════════════
+   NAVIGAZIONE
+════════════════════════════════════════════ */
+function mostraSezione(nome, el) {
+  salvaCartella(); // auto-salva al cambio sezione
+  document.querySelectorAll('.sezione-pannello').forEach(p => p.classList.remove('attiva'));
+  document.getElementById('pannello-' + nome).classList.add('attiva');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('attivo'));
+  if (el) el.classList.add('attivo');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function salvaEVai(sezione) {
+  const tabs = document.querySelectorAll('.nav-tab');
+  const nomi = ['anagrafica','sanitaria','diario','documenti','legale','sociale','pei','uscita'];
+  const idx = nomi.indexOf(sezione);
+  mostraSezione(sezione, idx >= 0 ? tabs[idx] : null);
+}
+
+function tornaAlGestionale() {
+  salvaCartella().then(() => {
+    const url = localStorage.getItem(GEST_URL_KEY) || 'index.html';
+    window.location.href = url;
+  });
+}
+
+/* ════════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════════ */
+function aggiornaSidebar() {
+  const cognome = gv('cognome'), nome = gv('nome');
+  const alias = gv('alias'), naz = gv('nazionalita');
+  const dob = document.getElementById('data-nascita')?.value;
+  const sbarco = gv('luogo-sbarco'), cm = gv('cm-nome');
+  const fasn = gv('fascicolo-n'), strutt = gv('struttura');
+
+  const nomeCompleto = [cognome, nome].filter(Boolean).join(' ') || 'Minore';
+  const iniziali = [cognome.charAt(0), nome.charAt(0)].filter(Boolean).join('').toUpperCase() || '–';
+  document.getElementById('sidebar-nome').textContent = nomeCompleto;
+  document.getElementById('sidebar-alias').textContent = alias ? 'Alias: ' + alias : 'Alias: —';
+  document.getElementById('avatar-iniziali').textContent = iniziali;
+  document.getElementById('sb-naz').textContent = naz || '—';
+  document.getElementById('sb-dob').textContent = dob ? new Date(dob+'T12:00:00').toLocaleDateString('it-IT') : '—';
+  document.getElementById('sb-sbarco').textContent = sbarco || '—';
+  document.getElementById('sb-cm').textContent = cm || '—';
+  document.getElementById('sb-fasn').textContent = fasn || '—';
+  document.getElementById('sb-strutt').textContent = strutt || '—';
+  document.getElementById('badge-fascicolo').textContent = fasn ? 'Fascicolo: ' + fasn : 'Fascicolo: —';
+}
+
+function aggiornaBarre() {
+  const campiAnag = ['cognome','nome','nazionalita','luogo-sbarco','struttura','data-nascita','fascicolo-n','cm-nome'];
+  const comp = campiAnag.filter(id => gv(id)).length;
+  const perc = Math.round(comp / campiAnag.length * 100);
+  document.getElementById('perc-anag').textContent = perc + '%';
+  document.getElementById('bar-anag').style.width = perc + '%';
+}
+
+/* ════════════════════════════════════════════
+   PEI
+════════════════════════════════════════════ */
+const AREE_PEI = [
+  { id:'doc', titolo:'1. Documenti', colore:'#1a3a5c' },
+  { id:'auto', titolo:'2. Autonomia personale', colore:'#2563a8' },
+  { id:'salute', titolo:'3. Salute', colore:'#1a7a4a' },
+  { id:'rel', titolo:'4. Relazioni', colore:'#7c3aed' },
+  { id:'lavoro', titolo:'5. Scuola-Lavoro', colore:'#e85d1a' },
+  { id:'territ', titolo:'6. Integrazione sul territorio', colore:'#a05000' },
+];
+
+function costruisciAreePEI() {
+  caricaAreePEI([]);
+}
+
+function caricaAreePEI(areeSalvate) {
+  const c = document.getElementById('contenitore-aree-pei');
+  c.innerHTML = '';
+  AREE_PEI.forEach(area => {
+    const areaDati = areeSalvate.find(a => a.id === area.id) || { id: area.id, obiettivi: [] };
+    const wrap = document.createElement('div');
+    wrap.className = 'pei-area-wrap';
+    wrap.innerHTML = `
+      <div class="pei-area-titolo" style="background:${area.colore};">${area.titolo}</div>
+      <table class="tabella-pei">
+        <thead><tr>
+          <th style="width:24px;">N.</th><th>Obiettivo</th><th>Azioni</th><th>Risultati</th><th>Tempi</th>
+          <th style="width:90px;">II trim.</th><th style="width:90px;">III trim.</th><th style="width:90px;">IV trim.</th>
+          <th style="width:32px;"></th>
+        </tr></thead>
+        <tbody id="corpo-pei-${area.id}"></tbody>
+      </table>
+      <button class="btn-aggiungi-riga" onclick="aggiungiRigaPEI('${area.id}')">+ Aggiungi obiettivo</button>`;
+    c.appendChild(wrap);
+    if (areaDati.obiettivi && areaDati.obiettivi.length > 0) {
+      areaDati.obiettivi.forEach(ob => aggiungiRigaPEI(area.id, ob));
+    } else {
+      aggiungiRigaPEI(area.id, {});
+    }
+  });
+}
+
+function aggiungiRigaPEI(areaId, ob={}) {
+  const corpo = document.getElementById('corpo-pei-' + areaId);
+  const n = corpo.querySelectorAll('tr').length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="color:var(--testo-muted);font-size:11px;text-align:center;">${n}</td>
+    <td><input type="text" class="pei-obj" value="${ob.obj||''}" placeholder="Obiettivo…" style="font-size:12px;padding:4px;width:100%;"></td>
+    <td><input type="text" class="pei-az" value="${ob.az||''}" placeholder="Azioni…" style="font-size:12px;padding:4px;width:100%;"></td>
+    <td><input type="text" class="pei-ris" value="${ob.ris||''}" placeholder="Risultato…" style="font-size:12px;padding:4px;width:100%;"></td>
+    <td><input type="text" class="pei-tempi" value="${ob.tempi||''}" placeholder="Es. 3 mesi" style="font-size:12px;padding:4px;width:100%;"></td>
+    <td><div class="pei-check-wrap"><label class="pei-trim-check"><input type="checkbox" class="pei-t2" ${ob.t2?'checked':''}> SÌ</label></div></td>
+    <td><div class="pei-check-wrap"><label class="pei-trim-check"><input type="checkbox" class="pei-t3" ${ob.t3?'checked':''}> SÌ</label></div></td>
+    <td><div class="pei-check-wrap"><label class="pei-trim-check"><input type="checkbox" class="pei-t4" ${ob.t4?'checked':''}> SÌ</label></div></td>
+    <td><button class="btn-rimuovi" onclick="rimuoviRiga(this)">×</button></td>`;
+  corpo.appendChild(tr);
+}
+
+function raccogliAreePEI() {
+  return AREE_PEI.map(area => {
+    const rows = document.querySelectorAll(`#corpo-pei-${area.id} tr`);
+    const obiettivi = Array.from(rows).map(row => ({
+      obj: row.querySelector('.pei-obj')?.value || '',
+      az: row.querySelector('.pei-az')?.value || '',
+      ris: row.querySelector('.pei-ris')?.value || '',
+      tempi: row.querySelector('.pei-tempi')?.value || '',
+      t2: row.querySelector('.pei-t2')?.checked || false,
+      t3: row.querySelector('.pei-t3')?.checked || false,
+      t4: row.querySelector('.pei-t4')?.checked || false,
+    })).filter(o => o.obj || o.az);
+    return { id: area.id, titolo: area.titolo, obiettivi };
+  });
+}
+
+/* ════════════════════════════════════════════
+   TIMELINE
+════════════════════════════════════════════ */
+const MESI = ['FEB 24','MAR 24','APR 24','MAG 24','GIU 24','LUG 24','AGO 24','SET 24','OTT 24','NOV 24','DIC 24','GEN 25'];
+const AREE_TL = ['DOCUMENTI','IGIENE PERSONALE','CURA DEGLI AMBIENTI','AUTONOMIE','DOTTORE','PSICOLOGO','ATTIVITÀ INSIEME','SCUOLA','FORMAZIONE E LAVORO','RISPARMI','RICERCA CASA'];
+const LISTA_DOCS = ['Verbale di affidamento (art. 403 c.c.)','Provvedimento affidamento definitivo','Patto di accoglienza','STP','Codice fiscale','Iscrizione Servizio Sanitario Nazionale','Documenti identità (paese di origine)','Foto-segnalamento e questura','Permesso di soggiorno per minore età','Richiesta nomina tutore','Nomina tutore','Formalizzazione domanda protezione (C3)'];
+
+function costruisciTimeline() {
+  const tbl = document.getElementById('timeline-pei');
+  let html = '<thead><tr><th style="text-align:left;min-width:130px;">Area</th>';
+  MESI.forEach(m => html += `<th>${m}</th>`);
+  html += '</tr></thead><tbody>';
+  AREE_TL.forEach(area => {
+    html += `<tr><td class="area-label">${area}</td>`;
+    MESI.forEach(m => html += `<td onclick="this.classList.toggle('attivo')" title="${area} – ${m}"></td>`);
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+function costruisciListaDocumenti() {
+  const corpo = document.getElementById('corpo-documenti');
+  corpo.innerHTML = '';
+  LISTA_DOCS.forEach(doc => {
+    const tr = document.createElement('tr');
+    const docId = doc.replace(/[\s().,]/g,'');
+    tr.innerHTML = `
+      <td>${doc}</td>
+      <td><input type="radio" name="doc-${docId}" value="si"></td>
+      <td><input type="radio" name="doc-${docId}" value="no"></td>
+      <td><input type="date" style="font-size:12px;padding:4px 6px;width:130px;"></td>
+      <td><input type="date" style="font-size:12px;padding:4px 6px;width:130px;"></td>
+      <td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px 8px;width:100%;"></td>`;
+    corpo.appendChild(tr);
+  });
+}
+
+/* ════════════════════════════════════════════
+   DIARIO ROWS
+════════════════════════════════════════════ */
+function aggiungiRigaDiario() {
+  const corpo = document.getElementById('corpo-diario');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="date" style="font-size:12px;padding:4px;width:100%;"></td><td><select style="font-size:12px;padding:4px;width:100%;"><option value="">— Tipo —</option><option>Colloquio accoglienza</option><option>Visita medica</option><option>Accompagnamento questura</option><option>Colloquio legale</option><option>Colloquio psicologico</option><option>Attività scolastica</option><option>Attività ludico-ricreativa</option><option>Incontro équipe</option><option>Altro</option></select></td><td><input type="text" placeholder="Operatore" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Note…" style="font-size:12px;padding:4px;width:100%;"></td><td><button class="btn-rimuovi" onclick="rimuoviRiga(this)">×</button></td>`;
+  corpo.appendChild(tr);
+}
+
+function aggiungiRigaGenerica(corpoId) {
+  const corpo = document.getElementById(corpoId);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="date" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Evidenze…" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Commenti…" style="font-size:12px;padding:4px;width:100%;"></td><td><input type="text" placeholder="Operatore" style="font-size:12px;padding:4px;width:100%;"></td><td><button class="btn-rimuovi" onclick="rimuoviRiga(this)">×</button></td>`;
+  corpo.appendChild(tr);
+}
+
+function rimuoviRiga(btn) {
+  const tr = btn.closest('tr');
+  if (tr.parentElement.querySelectorAll('tr').length > 1) tr.remove();
+}
+
+function coloraSelect(sel) {
+  sel.className = 'select-si-no';
+  if (sel.value === 'SI' || sel.value === 'SÌ') sel.classList.add('si');
+  else if (sel.value === 'NO') sel.classList.add('no');
+}
+
+/* ════════════════════════════════════════════
+   STAMPA / PDF
+════════════════════════════════════════════ */
+function stampaTutto() {
+  document.querySelectorAll('.sezione-pannello').forEach(p => p.classList.add('attiva'));
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.querySelectorAll('.sezione-pannello').forEach(p => p.classList.remove('attiva'));
+      document.getElementById('pannello-anagrafica').classList.add('attiva');
+      document.querySelectorAll('.nav-tab')[0].classList.add('attivo');
+    }, 1500);
+  }, 300);
+}
+
+function scaricaPDF() {
+  const msg = document.createElement('div');
+  msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border:2px solid #1a3a5c;border-radius:8px;padding:28px 32px;z-index:9999;max-width:440px;font-family:Arial,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.25);';
+  msg.innerHTML = `<div style="font-size:16px;font-weight:bold;color:#1a3a5c;margin-bottom:12px;">Salva come PDF</div><div style="font-size:13px;color:#444;line-height:1.7;margin-bottom:16px;">1. Premi <strong>OK</strong><br>2. Seleziona <strong>"Salva come PDF"</strong> come stampante<br>3. Premi <strong>Salva</strong></div><div style="display:flex;gap:10px;justify-content:flex-end;"><button onclick="this.closest('div[style*=fixed]').nextSibling.remove();this.closest('div[style*=fixed]').remove()" style="padding:8px 16px;background:#eee;border:none;border-radius:4px;cursor:pointer;font-size:13px;">Annulla</button><button id="ok-pdf-btn" style="padding:8px 20px;background:#1a3a5c;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:bold;">OK</button></div>`;
+  document.body.appendChild(msg);
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9998;';
+  overlay.onclick = () => { msg.remove(); overlay.remove(); };
+  document.body.appendChild(overlay);
+  document.getElementById('ok-pdf-btn').onclick = () => { msg.remove(); overlay.remove(); stampaTutto(); };
+}
+
+/* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+let toastTm;
+function mostraToast(msg) {
+  const t = document.getElementById('toast-cart');
+  t.textContent = msg;
+  t.classList.add('visibile');
+  clearTimeout(toastTm);
+  toastTm = setTimeout(() => t.classList.remove('visibile'), 2500);
+}
+
+/* ════════════════════════════════════════════
+   INIT UI
+════════════════════════════════════════════ */
+function inizializzaUI() {
+  costruisciTimeline();
+  costruisciListaDocumenti();
+  // L'area PEI viene costruita da caricaMinore
+}
+
+/* Boot */
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>

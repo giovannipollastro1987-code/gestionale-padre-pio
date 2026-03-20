@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestionale Minori – Consorzio Padre Pio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --ink:#1c2333;--ink-2:#3d4a5c;--ink-3:#6b7a8d;--ink-4:#a8b3bf;
+  --bg:#f5f6f8;--bg-2:#eceef2;--white:#ffffff;
+  --accent:#2d6be4;--accent-light:#e8effe;--accent-2:#1a4fb0;
+  --green:#1e8a5e;--green-light:#e6f5ef;
+  --orange:#d4600a;--orange-light:#fdf0e6;
+  --red:#c0392b;--red-light:#fdecea;
+  --yellow:#b58800;--yellow-light:#fdf8e1;
+  --border:#dde1e8;--border-2:#c8cdd6;
+  --shadow-sm:0 1px 3px rgba(28,35,51,.08);
+  --shadow-md:0 4px 16px rgba(28,35,51,.10);
+  --shadow-lg:0 8px 32px rgba(28,35,51,.14);
+  --r:10px;--r-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.5;}
+.app-shell{display:flex;min-height:100vh;}
+
+/* ── SIDENAV ── */
+.sidenav{width:228px;background:var(--ink);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.sidenav-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,.08);}
+.sidenav-logo .org{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:4px;}
+.sidenav-logo .brand{font-family:'DM Serif Display',serif;font-size:18px;color:#fff;line-height:1.2;}
+.sidenav-logo .brand span{color:#6b9ff8;}
+.sidenav-user{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0;}
+.user-info .name{font-size:13px;font-weight:500;color:#fff;}
+.user-info .role{font-size:11px;color:rgba(255,255,255,.45);}
+.sidenav-section{padding:18px 12px 6px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);}
+.sidenav-link{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:1px 8px;border-radius:var(--r-sm);font-size:13px;color:rgba(255,255,255,.6);cursor:pointer;transition:background .15s,color .15s;text-decoration:none;}
+.sidenav-link:hover{background:rgba(255,255,255,.07);color:#fff;}
+.sidenav-link.active{background:var(--accent);color:#fff;}
+.sidenav-link .ico{width:18px;height:18px;opacity:.7;flex-shrink:0;}
+.sidenav-link.active .ico{opacity:1;}
+.sidenav-bottom{margin-top:auto;padding:14px 8px;border-top:1px solid rgba(255,255,255,.08);}
+
+/* ── MAIN ── */
+.main-content{margin-left:228px;flex:1;display:flex;flex-direction:column;}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink);flex:1;}
+.topbar-title small{font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink-3);font-weight:400;margin-left:8px;}
+
+/* ── BOTTONI ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r-sm);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-2);}
+.btn-ghost{background:transparent;color:var(--ink-2);border:1px solid var(--border-2);}
+.btn-ghost:hover{background:var(--bg);}
+.btn-danger{background:var(--red-light);color:var(--red);border:1px solid #f5c6c6;}
+.btn-danger:hover{background:#fad5d3;}
+.btn-sm{padding:5px 11px;font-size:12px;}
+
+/* ── PAGINE ── */
+.page{display:none;padding:28px;}
+.page.active{display:block;}
+
+/* ── STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;display:flex;flex-direction:column;gap:6px;}
+.stat-card .label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-3);font-weight:500;}
+.stat-card .value{font-size:32px;font-family:'DM Serif Display',serif;color:var(--ink);line-height:1;}
+.stat-card .sub{font-size:12px;color:var(--ink-3);}
+.stat-card.accent{border-left:3px solid var(--accent);}
+.stat-card.green{border-left:3px solid var(--green);}
+.stat-card.orange{border-left:3px solid var(--orange);}
+.stat-card.yellow{border-left:3px solid var(--yellow);}
+
+/* ── SEZIONI ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-header h2{font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink);font-weight:400;}
+
+/* ── TABELLA ── */
+.table-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+table.data-table{width:100%;border-collapse:collapse;}
+table.data-table thead th{background:var(--bg);padding:10px 16px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--ink-3);border-bottom:1px solid var(--border);}
+table.data-table tbody tr{border-bottom:1px solid var(--bg-2);cursor:pointer;transition:background .1s;}
+table.data-table tbody tr:last-child{border-bottom:none;}
+table.data-table tbody tr:hover{background:var(--accent-light);}
+table.data-table tbody td{padding:12px 16px;font-size:13px;color:var(--ink-2);vertical-align:middle;}
+
+/* ── BADGE ── */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-blue{background:var(--accent-light);color:var(--accent-2);}
+.badge-green{background:var(--green-light);color:var(--green);}
+.badge-orange{background:var(--orange-light);color:var(--orange);}
+.badge-gray{background:var(--bg-2);color:var(--ink-3);}
+.avatar-sm{width:30px;height:30px;border-radius:50%;background:var(--accent-light);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--accent);margin-right:8px;vertical-align:middle;}
+
+/* ── DIARIO ── */
+.diario-list{display:flex;flex-direction:column;gap:10px;}
+.diario-entry{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;gap:14px;align-items:flex-start;}
+.diario-date{flex-shrink:0;text-align:center;background:var(--accent-light);border-radius:var(--r-sm);padding:6px 10px;min-width:52px;}
+.diario-date .day{font-family:'DM Serif Display',serif;font-size:20px;color:var(--accent);line-height:1;}
+.diario-date .mon{font-size:10px;text-transform:uppercase;color:var(--accent-2);letter-spacing:1px;}
+.diario-body{flex:1;}
+.diario-tipo{font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.diario-testo{font-size:13px;color:var(--ink-2);line-height:1.5;}
+.diario-op{font-size:11px;color:var(--ink-4);margin-top:5px;}
+.diario-actions{display:flex;gap:6px;}
+.btn-icon{width:28px;height:28px;border:1px solid var(--border-2);background:var(--bg);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:background .15s;}
+.btn-icon:hover{background:var(--bg-2);}
+.btn-icon.danger:hover{background:var(--red-light);border-color:#f5c6c6;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(28,35,51,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--white);border-radius:var(--r);width:100%;max-width:560px;box-shadow:var(--shadow-lg);transform:translateY(16px);transition:transform .2s;max-height:90vh;overflow-y:auto;}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-header h3{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;}
+.modal-close{width:28px;height:28px;border:none;background:var(--bg);border-radius:var(--r-sm);cursor:pointer;font-size:16px;color:var(--ink-3);display:flex;align-items:center;justify-content:center;}
+.modal-body{padding:20px 22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+
+/* ── FORM ── */
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px;}
+.form-card-header{padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg);}
+.form-card-title{font-size:13px;font-weight:600;color:var(--ink);text-transform:uppercase;letter-spacing:.5px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-col-full{grid-column:1/-1;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);}
+.field input,.field select,.field textarea{padding:8px 12px;border:1px solid var(--border-2);border-radius:var(--r-sm);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--white);transition:border-color .15s;width:100%;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,107,228,.1);}
+.field textarea{resize:vertical;min-height:80px;line-height:1.5;}
+
+/* ── SEARCH ── */
+.search-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.search-input-wrap{position:relative;flex:1;}
+.search-input-wrap input{width:100%;padding:9px 14px 9px 36px;border:1px solid var(--border-2);border-radius:var(--r-sm);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--white);}
+.search-input-wrap input:focus{outline:none;border-color:var(--accent);}
+.search-input-wrap .search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink-4);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 20px;border-radius:var(--r);font-size:13px;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s;pointer-events:none;z-index:9999;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.success{background:var(--green);}
+.toast.error{background:var(--red);}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:48px 24px;color:var(--ink-3);}
+.empty-state .icon{font-size:40px;margin-bottom:12px;}
+.empty-state h3{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink-2);margin-bottom:6px;font-weight:400;}
+.empty-state p{font-size:13px;}
+
+/* ── LOADING ── */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── LOGIN SCREEN ── */
+#login-screen{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;z-index:1000;flex-direction:column;gap:0;}
+.login-box{background:var(--white);border-radius:var(--r);padding:36px 40px;width:100%;max-width:400px;box-shadow:var(--shadow-lg);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo .org{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px;}
+.login-logo .brand{font-family:'DM Serif Display',serif;font-size:26px;color:var(--ink);}
+.login-logo .brand span{color:var(--accent);}
+.login-box h2{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;color:var(--ink);margin-bottom:20px;text-align:center;}
+.login-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.login-field label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);}
+.login-field input{padding:10px 14px;border:1px solid var(--border-2);border-radius:var(--r-sm);font-size:14px;font-family:'DM Sans',sans-serif;color:var(--ink);width:100%;}
+.login-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,107,228,.1);}
+.login-err{font-size:12px;color:var(--red);background:var(--red-light);padding:8px 12px;border-radius:var(--r-sm);margin-bottom:12px;display:none;}
+.login-toggle{font-size:13px;color:var(--ink-3);text-align:center;margin-top:14px;}
+.login-toggle a{color:var(--accent);cursor:pointer;text-decoration:underline;}
+
+/* ── CONFIG SCREEN ── */
+#config-screen{position:fixed;inset:0;background:rgba(28,35,51,.85);display:none;align-items:center;justify-content:center;z-index:2000;}
+#config-screen.show{display:flex;}
+.config-box{background:var(--white);border-radius:var(--r);padding:32px 36px;max-width:500px;width:100%;box-shadow:var(--shadow-lg);}
+.config-box h2{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;margin-bottom:8px;}
+.config-box p{font-size:13px;color:var(--ink-3);margin-bottom:20px;line-height:1.6;}
+.config-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.config-field label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);}
+.config-field input{padding:9px 12px;border:1px solid var(--border-2);border-radius:var(--r-sm);font-size:13px;font-family:'DM Sans',sans-serif;width:100%;}
+.config-field input:focus{outline:none;border-color:var(--accent);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .sidenav{width:100%;height:56px;bottom:auto;flex-direction:row;overflow-x:auto;}
+  .main-content{margin-left:0;margin-top:56px;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SCHERMATA CONFIGURAZIONE (prima volta) ═══ -->
+<div id="config-screen">
+  <div class="config-box">
+    <h2>Configura Supabase</h2>
+    <p>Inserisci le credenziali del tuo progetto Supabase. Le trovi in <strong>Project Settings → API</strong>.</p>
+    <div class="config-field">
+      <label>Project URL</label>
+      <input type="text" id="cfg-url" placeholder="https://xxxx.supabase.co">
+    </div>
+    <div class="config-field">
+      <label>Anon public key</label>
+      <input type="text" id="cfg-key" placeholder="eyJhbGci...">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" onclick="salvaConfig()">
+      Salva e avvia
+    </button>
+    <p style="font-size:11px;color:var(--ink-4);margin-top:12px;text-align:center;">
+      Questi dati vengono salvati solo nel tuo browser.
+    </p>
+  </div>
+</div>
+
+<!-- ═══ SCHERMATA LOGIN ═══ -->
+<div id="login-screen" style="display:none;">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="org">Consorzio</div>
+      <div class="brand">Padre <span>Pio</span></div>
+    </div>
+    <h2 id="login-titolo">Accedi al gestionale</h2>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="nome@esempio.it" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') loginAction()">
+    </div>
+    <button class="btn btn-primary" id="login-btn" style="width:100%;justify-content:center;padding:11px;" onclick="loginAction()">
+      Accedi
+    </button>
+    <div class="login-toggle">
+      <span id="login-toggle-txt">Non hai un account?</span>
+      <a onclick="toggleLoginMode()"> <span id="login-toggle-link">Registrati</span></a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ═══ -->
+<div class="app-shell">
+
+  <!-- SIDENAV -->
+  <nav class="sidenav">
+    <div class="sidenav-logo">
+      <div class="org">Consorzio</div>
+      <div class="brand">Padre <span>Pio</span></div>
+    </div>
+    <div class="sidenav-user">
+      <div class="user-avatar" id="nav-avatar">EP</div>
+      <div class="user-info">
+        <div class="name" id="nav-name">Educatore</div>
+        <div class="role">Operatore</div>
+      </div>
+    </div>
+    <div class="sidenav-section">Menu</div>
+    <a class="sidenav-link active" onclick="navTo('dashboard')">
+      <svg class="ico" viewBox="0 0 20 20" fill="currentColor"><path d="M2 4a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V4zm0 8a2 2 0 012-2h4a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4zm10 0a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg>
+      Dashboard
+    </a>
+    <a class="sidenav-link" onclick="navTo('minori')">
+      <svg class="ico" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zm8 0a3 3 0 11-6 0 3 3 0 016 0zM4.5 15.5A5.5 5.5 0 0110 11a5.5 5.5 0 015.5 4.5H4.5z"/></svg>
+      I miei minori
+    </a>
+    <a class="sidenav-link" onclick="navTo('diario-globale')">
+      <svg class="ico" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V7.414A1 1 0 0016.707 7l-3.707-3.707A1 1 0 0012.586 3H4zm3 7h6a1 1 0 010 2H7a1 1 0 010-2zm0 3h4a1 1 0 010 2H7a1 1 0 010-2z"/></svg>
+      Diario globale
+    </a>
+    <div class="sidenav-section">Account</div>
+    <a class="sidenav-link" onclick="navTo('profilo')">
+      <svg class="ico" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+      Il mio profilo
+    </a>
+    <div class="sidenav-bottom">
+      <a class="sidenav-link" onclick="logout()">
+        <svg class="ico" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h7a1 1 0 100-2H4V5h6a1 1 0 100-2H3zm11.707 4.293a1 1 0 010 1.414L12.414 11H16a1 1 0 110 2h-3.586l2.293 2.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        Esci
+      </a>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard <small>Panoramica</small></div>
+      <button class="btn btn-primary btn-sm" onclick="apriModalNuovoMinore()">+ Nuovo minore</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-row">
+        <div class="stat-card accent"><div class="label">Minori in carico</div><div class="value" id="stat-totale">—</div><div class="sub">totale</div></div>
+        <div class="stat-card green"><div class="label">PEI compilati</div><div class="value" id="stat-pei">—</div><div class="sub">su <span id="stat-pei-tot">0</span></div></div>
+        <div class="stat-card orange"><div class="label">Interventi oggi</div><div class="value" id="stat-oggi">—</div><div class="sub">registrati</div></div>
+        <div class="stat-card yellow"><div class="label">Da aggiornare</div><div class="value" id="stat-aggiorna">—</div><div class="sub">senza interventi &gt;7gg</div></div>
+      </div>
+      <div class="section-header">
+        <h2>Ultimi interventi</h2>
+        <button class="btn btn-ghost btn-sm" onclick="navTo('diario-globale')">Vedi tutti →</button>
+      </div>
+      <div id="dashboard-diario" class="diario-list">
+        <div class="empty-state"><div class="icon">📋</div><h3>Caricamento…</h3></div>
+      </div>
+    </div>
+
+    <!-- MINORI -->
+    <div class="page" id="page-minori">
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <span class="search-ico">🔍</span>
+          <input type="text" placeholder="Cerca per nome, nazionalità, struttura…" id="search-input" oninput="filtraMinori()">
+        </div>
+        <select class="btn btn-ghost btn-sm" id="filter-stato" onchange="filtraMinori()" style="cursor:pointer;">
+          <option value="">Tutti gli stati</option>
+          <option value="attivo">In carico</option>
+          <option value="trasferito">Trasferito</option>
+          <option value="chiuso">Chiuso</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Minore</th><th>Età</th><th>Nazionalità</th><th>Ingresso</th><th>PEI</th><th>Stato</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tabella-minori">
+            <tr><td colspan="7"><div class="empty-state"><div class="icon">⏳</div><h3>Caricamento…</h3></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DIARIO GLOBALE -->
+    <div class="page" id="page-diario-globale">
+      <div id="diario-globale-list" class="diario-list">
+        <div class="empty-state"><div class="icon">⏳</div><h3>Caricamento…</h3></div>
+      </div>
+    </div>
+
+    <!-- PROFILO -->
+    <div class="page" id="page-profilo">
+      <div class="form-card" style="max-width:480px;">
+        <div class="form-card-header"><span class="form-card-title">Il mio profilo</span></div>
+        <div style="padding:20px;">
+          <div class="form-grid">
+            <div class="field"><label>Nome</label><input type="text" id="p-nome" oninput="aggiornaProfilo()"></div>
+            <div class="field"><label>Cognome</label><input type="text" id="p-cognome" oninput="aggiornaProfilo()"></div>
+            <div class="field form-col-full"><label>Struttura</label><input type="text" id="p-struttura"></div>
+            <div class="field form-col-full"><label>Email</label><input type="email" id="p-email" disabled style="opacity:.6;"></div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="salvaProfilo()">Salva profilo</button>
+            <button class="btn btn-ghost" onclick="logout()">Esci dall'account</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<!-- MODAL NUOVO MINORE -->
+<div class="modal-overlay" id="modal-nuovo-minore">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Nuovo minore</h3>
+      <button class="modal-close" onclick="chiudiModal('modal-nuovo-minore')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>Cognome *</label><input type="text" id="m-cognome"></div>
+        <div class="field"><label>Nome *</label><input type="text" id="m-nome"></div>
+        <div class="field"><label>Data di nascita</label><input type="date" id="m-dob"></div>
+        <div class="field"><label>Nazionalità</label><input type="text" id="m-naz"></div>
+        <div class="field form-col-full"><label>Struttura</label><input type="text" id="m-struttura"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="chiudiModal('modal-nuovo-minore')">Annulla</button>
+      <button class="btn btn-primary" id="btn-crea-minore" onclick="creaMinore()">Crea cartella</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ Salvato</div>
+
+<script>
+/* ════════════════════════════════════════════
+   CONFIGURAZIONE SUPABASE
+════════════════════════════════════════════ */
+const CFG_KEY = 'supabase_config_padrepio';
+
+function leggiConfig() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY)) || {}; } catch(e) { return {}; }
+}
+
+function salvaConfig() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { alert('Inserisci entrambe le credenziali'); return; }
+  localStorage.setItem(CFG_KEY, JSON.stringify({ url, key }));
+  location.reload();
+}
+
+/* ════════════════════════════════════════════
+   INIT SUPABASE
+════════════════════════════════════════════ */
+let supabase = null;
+
+function inizializzaSupabase() {
+  const cfg = leggiConfig();
+  if (!cfg.url || !cfg.key) {
+    document.getElementById('config-screen').classList.add('show');
+    return false;
+  }
+  supabase = window.supabase.createClient(cfg.url, cfg.key);
+  return true;
+}
+
+/* ════════════════════════════════════════════
+   AUTH
+════════════════════════════════════════════ */
+let utenteCorrente = null;
+let modoRegistrazione = false;
+
+function toggleLoginMode() {
+  modoRegistrazione = !modoRegistrazione;
+  document.getElementById('login-titolo').textContent = modoRegistrazione ? 'Crea account' : 'Accedi al gestionale';
+  document.getElementById('login-toggle-txt').textContent = modoRegistrazione ? 'Hai già un account?' : 'Non hai un account?';
+  document.getElementById('login-toggle-link').textContent = modoRegistrazione ? 'Accedi' : 'Registrati';
+  document.getElementById('login-btn').textContent = modoRegistrazione ? 'Crea account' : 'Accedi';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+async function loginAction() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-err');
+
+  if (!email || !password) { mostraErrLogin('Inserisci email e password'); return; }
+  errEl.style.display = 'none';
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    let result;
+    if (modoRegistrazione) {
+      result = await supabase.auth.signUp({ email, password });
+      if (result.error) throw result.error;
+      if (result.data.user && !result.data.session) {
+        btn.innerHTML = '✓ Controlla la tua email';
+        mostraErrLogin('Controlla la tua email per confermare la registrazione', true);
+        return;
+      }
+    } else {
+      result = await supabase.auth.signInWithPassword({ email, password });
+      if (result.error) throw result.error;
+    }
+    // Login ok — onAuthStateChange gestirà il resto
+  } catch(e) {
+    mostraErrLogin(traduciErroreAuth(e.message));
+    btn.textContent = modoRegistrazione ? 'Crea account' : 'Accedi';
+    btn.disabled = false;
+  }
+}
+
+function mostraErrLogin(msg, info) {
+  const el = document.getElementById('login-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = info ? '#e6f5ef' : '';
+  el.style.color = info ? '#1e8a5e' : '';
+}
+
+function traduciErroreAuth(msg) {
+  const map = {
+    'Invalid login credentials': 'Email o password errati',
+    'Email not confirmed': 'Controlla la tua email per confermare l\'account',
+    'User already registered': 'Email già registrata — prova ad accedere',
+    'Password should be at least 6 characters': 'La password deve avere almeno 6 caratteri',
+  };
+  for (const [k, v] of Object.entries(map)) {
+    if (msg.includes(k)) return v;
+  }
+  return msg;
+}
+
+async function logout() {
+  await supabase.auth.signOut();
+  location.reload();
+}
+
+/* ════════════════════════════════════════════
+   STATO APP
+════════════════════════════════════════════ */
+let minori = [];
+let interventi = [];
+
+/* ════════════════════════════════════════════
+   NAVIGAZIONE
+════════════════════════════════════════════ */
+function navTo(pagina) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidenav-link').forEach(l => l.classList.remove('active'));
+  const pageEl = document.getElementById('page-' + pagina);
+  if (pageEl) pageEl.classList.add('active');
+  const links = document.querySelectorAll('.sidenav-link');
+  const mappa = { dashboard:0, minori:1, 'diario-globale':2, profilo:3 };
+  if (mappa[pagina] !== undefined) links[mappa[pagina]].classList.add('active');
+  const titoli = {
+    dashboard:['Dashboard','Panoramica'], minori:['I miei minori','Gestione cartelle'],
+    'diario-globale':['Diario globale','Tutti gli interventi'], profilo:['Il mio profilo','Account']
+  };
+  const t = titoli[pagina] || [pagina,''];
+  document.getElementById('topbar-title').innerHTML = `${t[0]} <small>${t[1]}</small>`;
+  if (pagina === 'dashboard') aggiornaDashboard();
+  if (pagina === 'minori') renderTabella();
+  if (pagina === 'diario-globale') renderDiarioGlobale();
+  if (pagina === 'profilo') caricaProfilo();
+}
+
+/* ════════════════════════════════════════════
+   CARICAMENTO DATI
+════════════════════════════════════════════ */
+async function caricaTuttiDati() {
+  const [{ data: m }, { data: i }] = await Promise.all([
+    supabase.from('minori').select('*').order('creato_il', { ascending: false }),
+    supabase.from('interventi').select('*').order('data', { ascending: false })
+  ]);
+  minori = m || [];
+  interventi = i || [];
+  aggiornaDashboard();
+  renderTabella();
+}
+
+/* ════════════════════════════════════════════
+   PROFILO
+════════════════════════════════════════════ */
+async function caricaProfilo() {
+  const { data } = await supabase.from('educatori').select('*').eq('id', utenteCorrente.id).single();
+  if (data) {
+    document.getElementById('p-nome').value = data.nome || '';
+    document.getElementById('p-cognome').value = data.cognome || '';
+    document.getElementById('p-struttura').value = data.struttura || '';
+    document.getElementById('p-email').value = utenteCorrente.email || '';
+    aggiornaNomeSidebar(data.nome, data.cognome);
+  }
+}
+
+async function salvaProfilo() {
+  const nome = document.getElementById('p-nome').value.trim();
+  const cognome = document.getElementById('p-cognome').value.trim();
+  const struttura = document.getElementById('p-struttura').value.trim();
+  const { error } = await supabase.from('educatori').upsert({ id: utenteCorrente.id, nome, cognome, struttura, email: utenteCorrente.email });
+  if (error) { toast('Errore salvataggio: ' + error.message, 'error'); return; }
+  aggiornaNomeSidebar(nome, cognome);
+  toast('Profilo salvato', 'success');
+}
+
+function aggiornaNomeSidebar(nome, cognome) {
+  const n = [nome, cognome].filter(Boolean).join(' ') || 'Educatore';
+  const iniziali = [(nome||'').charAt(0), (cognome||'').charAt(0)].filter(Boolean).join('').toUpperCase() || 'EP';
+  document.getElementById('nav-name').textContent = n;
+  document.getElementById('nav-avatar').textContent = iniziali;
+}
+
+function aggiornaProfilo() {
+  const nome = document.getElementById('p-nome').value.trim();
+  const cognome = document.getElementById('p-cognome').value.trim();
+  aggiornaNomeSidebar(nome, cognome);
+}
+
+/* ════════════════════════════════════════════
+   MINORI CRUD
+════════════════════════════════════════════ */
+function apriModalNuovoMinore() {
+  ['m-cognome','m-nome','m-struttura','m-naz'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-dob').value = '';
+  apriModal('modal-nuovo-minore');
+}
+
+async function creaMinore() {
+  const cognome = document.getElementById('m-cognome').value.trim();
+  const nome = document.getElementById('m-nome').value.trim();
+  if (!cognome && !nome) { toast('Inserisci almeno il nome', 'error'); return; }
+
+  const btn = document.getElementById('btn-crea-minore');
+  btn.innerHTML = '<span class="spinner"></span> Creazione…';
+  btn.disabled = true;
+
+  const { data, error } = await supabase.from('minori').insert({
+    educatore_id: utenteCorrente.id,
+    cognome, nome,
+    dob: document.getElementById('m-dob').value || null,
+    nazionalita: document.getElementById('m-naz').value.trim(),
+    struttura: document.getElementById('m-struttura').value.trim(),
+    stato: 'attivo'
+  }).select().single();
+
+  btn.textContent = 'Crea cartella';
+  btn.disabled = false;
+
+  if (error) { toast('Errore: ' + error.message, 'error'); return; }
+
+  minori.unshift(data);
+  chiudiModal('modal-nuovo-minore');
+  toast('Cartella creata!', 'success');
+  setTimeout(() => apriDettaglio(data.id), 300);
+}
+
+function apriDettaglio(id) {
+  // Salva ID e URL in localStorage, poi apri la cartella
+  localStorage.setItem('cartella_minore_attivo', id);
+  localStorage.setItem('gestionale_url', window.location.href);
+  // Salva anche la sessione Supabase per la cartella
+  const cfg = leggiConfig();
+  localStorage.setItem('supabase_config_padrepio', JSON.stringify(cfg));
+  window.location.href = 'cartella-minore-app.html';
+}
+
+/* ════════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════════ */
+function aggiornaDashboard() {
+  const today = new Date().toISOString().slice(0,10);
+  const settegiorni = new Date(Date.now() - 7*24*3600*1000).toISOString().slice(0,10);
+
+  const totale = minori.length;
+  const peiOk = minori.filter(m => m.pei_aree && Array.isArray(m.pei_aree) && m.pei_aree.some(a => a.obiettivi?.length > 0)).length;
+
+  const intHoje = interventi.filter(i => i.data === today).length;
+
+  // Minori senza interventi negli ultimi 7 giorni
+  const minoriConInterventi = new Set(
+    interventi.filter(i => i.data >= settegiorni).map(i => i.minore_id)
+  );
+  const daAggiornare = minori.filter(m => !minoriConInterventi.has(m.id)).length;
+
+  document.getElementById('stat-totale').textContent = totale;
+  document.getElementById('stat-pei').textContent = peiOk;
+  document.getElementById('stat-pei-tot').textContent = totale;
+  document.getElementById('stat-oggi').textContent = intHoje;
+  document.getElementById('stat-aggiorna').textContent = daAggiornare;
+
+  // Ultimi interventi
+  const container = document.getElementById('dashboard-diario');
+  const recenti = interventi.slice(0, 5);
+  if (recenti.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📋</div><h3>Nessun intervento ancora</h3><p>Apri una cartella per registrare il primo intervento.</p></div>`;
+  } else {
+    container.innerHTML = recenti.map(i => {
+      const m = minori.find(x => x.id === i.minore_id);
+      const nomeMinore = m ? [m.cognome, m.nome].filter(Boolean).join(' ') : 'Minore';
+      return renderDiarioItem({ ...i, minoreNome: nomeMinore }, false);
+    }).join('');
+  }
+}
+
+/* ════════════════════════════════════════════
+   TABELLA MINORI
+════════════════════════════════════════════ */
+function renderTabella(filtro, statoFiltro) {
+  const tbody = document.getElementById('tabella-minori');
+  let lista = [...minori];
+  if (filtro) {
+    const q = filtro.toLowerCase();
+    lista = lista.filter(m =>
+      (m.cognome||'').toLowerCase().includes(q) ||
+      (m.nome||'').toLowerCase().includes(q) ||
+      (m.nazionalita||'').toLowerCase().includes(q) ||
+      (m.struttura||'').toLowerCase().includes(q)
+    );
+  }
+  if (statoFiltro) lista = lista.filter(m => (m.stato||'attivo') === statoFiltro);
+
+  if (lista.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">👤</div><h3>${minori.length === 0 ? 'Nessun minore ancora' : 'Nessun risultato'}</h3><p>${minori.length === 0 ? 'Premi "+ Nuovo minore" per iniziare.' : 'Prova altri filtri.'}</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(m => {
+    const iniziali = [(m.cognome||'').charAt(0), (m.nome||'').charAt(0)].filter(Boolean).join('').toUpperCase() || '?';
+    const nomeCompleto = [m.cognome, m.nome].filter(Boolean).join(' ') || '—';
+    let eta = '—';
+    if (m.dob) {
+      const anni = Math.floor((Date.now() - new Date(m.dob)) / (365.25*24*3600*1000));
+      eta = anni + ' a.';
+    }
+    const peiOk = m.pei_aree && Array.isArray(m.pei_aree) && m.pei_aree.some(a => a.obiettivi?.length > 0);
+    const stato = m.stato || 'attivo';
+    const badgeStato = { attivo:'badge-green', trasferito:'badge-orange', chiuso:'badge-gray' };
+    return `<tr onclick="apriDettaglio('${m.id}')">
+      <td><span class="avatar-sm">${esc(iniziali)}</span><strong>${esc(nomeCompleto)}</strong></td>
+      <td>${eta}</td>
+      <td>${esc(m.nazionalita)||'—'}</td>
+      <td>${m.ingresso ? formatDate(m.ingresso) : '—'}</td>
+      <td><span class="badge ${peiOk ? 'badge-green' : 'badge-gray'}">${peiOk ? '✓ Compilato' : 'Da fare'}</span></td>
+      <td><span class="badge ${badgeStato[stato]}">${stato.charAt(0).toUpperCase()+stato.slice(1)}</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();apriDettaglio('${m.id}')">Apri →</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filtraMinori() {
+  renderTabella(
+    document.getElementById('search-input').value.trim(),
+    document.getElementById('filter-stato').value
+  );
+}
+
+/* ════════════════════════════════════════════
+   DIARIO GLOBALE
+════════════════════════════════════════════ */
+function renderDiarioGlobale() {
+  const container = document.getElementById('diario-globale-list');
+  if (interventi.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📋</div><h3>Nessun intervento</h3></div>`;
+    return;
+  }
+  container.innerHTML = interventi.slice(0, 50).map(i => {
+    const m = minori.find(x => x.id === i.minore_id);
+    const nomeMinore = m ? [m.cognome, m.nome].filter(Boolean).join(' ') : '—';
+    return renderDiarioItem({ ...i, minoreNome: nomeMinore }, false);
+  }).join('');
+}
+
+function renderDiarioItem(intv, mostraAzioni) {
+  const d = intv.data ? new Date(intv.data + 'T12:00:00') : null;
+  const day = d ? d.getDate().toString().padStart(2,'0') : '--';
+  const mon = d ? d.toLocaleString('it-IT',{month:'short'}).toUpperCase() : '---';
+  return `<div class="diario-entry">
+    <div class="diario-date"><div class="day">${day}</div><div class="mon">${mon}</div></div>
+    <div class="diario-body">
+      <div class="diario-tipo">${esc(intv.tipo)}</div>
+      <div class="diario-testo">${esc(intv.note)||'<em style="color:var(--ink-4)">Nessuna nota</em>'}</div>
+      <div class="diario-op">
+        ${!mostraAzioni && intv.minoreNome ? `<strong onclick="apriDettaglio('${intv.minore_id}')" style="cursor:pointer;color:var(--accent);">${esc(intv.minoreNome)}</strong> · ` : ''}
+        ${esc(intv.operatore)||'Operatore n.d.'}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════════════════════════
+   MODAL
+════════════════════════════════════════════ */
+function apriModal(id) { document.getElementById(id).classList.add('open'); }
+function chiudiModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+});
+
+/* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = (type==='success'?'✓ ':type==='error'?'✕ ':'ℹ ') + msg;
+  el.className = 'toast show' + (type ? ' '+type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ════════════════════════════════════════════
+   UTILITY
+════════════════════════════════════════════ */
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatDate(d) {
+  if (!d) return '';
+  const p = d.split('-');
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+/* ════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════ */
+async function boot() {
+  if (!inizializzaSupabase()) return;
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.querySelector('.app-shell').style.display = 'none';
+    return;
+  }
+
+  // Utente loggato
+  utenteCorrente = session.user;
+  document.querySelector('.app-shell').style.display = 'flex';
+  document.getElementById('login-screen').style.display = 'none';
+
+  // Carica nome profilo
+  const { data: prof } = await supabase.from('educatori').select('nome,cognome').eq('id', utenteCorrente.id).single();
+  if (prof) aggiornaNomeSidebar(prof.nome, prof.cognome);
+
+  await caricaTuttiDati();
+
+  // Aggiorna in tempo reale quando cambiano i dati
+  supabase.channel('realtime').on('postgres_changes', { event: '*', schema: 'public' }, () => {
+    caricaTuttiDati();
+  }).subscribe();
+}
+
+supabase === null; // assicura esecuzione dopo DOMContentLoaded
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
